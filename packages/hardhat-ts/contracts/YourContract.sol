@@ -3,13 +3,15 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "hardhat/console.sol";
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Admin.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./SigningUtils.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
 
-contract YourContract is Admin, SigningUtils, ERC721 {
+contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
   using SafeMath for uint256;
 
   struct Loan {
@@ -128,7 +130,7 @@ contract YourContract is Admin, SigningUtils, ERC721 {
       loanPrincipalAmount: _loanPrincipalAmount,
       maximumRepaymentAmount: _maximumRepaymentAmount,
       nftCollateralId: _nftCollateralId,
-      loanStartTime: uint64(now), //_loanStartTime
+      loanStartTime: uint64(block.timestamp), //_loanStartTime
       loanDuration: uint32(_loanDuration),
       loanInterestRateForDurationInBasisPoints: uint32(_loanInterestRateForDurationInBasisPoints),
       loanAdminFeeInBasisPoints: uint32(_adminFeeInBasisPoints),
@@ -223,7 +225,7 @@ contract YourContract is Admin, SigningUtils, ERC721 {
       loan.loanPrincipalAmount,
       loan.maximumRepaymentAmount,
       loan.nftCollateralId,
-      now, //_loanStartTime
+      block.timestamp, //_loanStartTime
       loan.loanDuration,
       loan.loanInterestRateForDurationInBasisPoints,
       loan.nftCollateralContract,
@@ -255,7 +257,7 @@ contract YourContract is Admin, SigningUtils, ERC721 {
       interestDue = _computeInterestDue(
         loan.loanPrincipalAmount,
         loan.maximumRepaymentAmount,
-        now.sub(uint256(loan.loanStartTime)),
+        block.timestamp.sub(uint256(loan.loanStartTime)),
         uint256(loan.loanDuration),
         uint256(loan.loanInterestRateForDurationInBasisPoints)
       );
@@ -315,7 +317,7 @@ contract YourContract is Admin, SigningUtils, ERC721 {
     // Ensure that the loan is indeed overdue, since we can only liquidate
     // overdue loans.
     uint256 loanMaturityDate = (uint256(loan.loanStartTime)).add(uint256(loan.loanDuration));
-    require(now > loanMaturityDate, "Loan is not overdue yet");
+    require(block.timestamp > loanMaturityDate, "Loan is not overdue yet");
 
     // Fetch the current lender of the promissory note corresponding to
     // this overdue loan.
@@ -338,7 +340,16 @@ contract YourContract is Admin, SigningUtils, ERC721 {
     _burn(_loanId);
 
     // Emit an event with all relevant details from this transaction.
-    emit LoanLiquidated(_loanId, loan.borrower, lender, loan.loanPrincipalAmount, loan.nftCollateralId, loanMaturityDate, now, loan.nftCollateralContract);
+    emit LoanLiquidated(
+      _loanId,
+      loan.borrower,
+      lender,
+      loan.loanPrincipalAmount,
+      loan.nftCollateralId,
+      loanMaturityDate,
+      block.timestamp,
+      loan.nftCollateralContract
+    );
 
     // Delete the loan from storage in order to achieve a substantial gas
     // savings and to lessen the burden of storage on Ethereum nodes, since
@@ -361,7 +372,7 @@ contract YourContract is Admin, SigningUtils, ERC721 {
     if (loan.interestIsProRated == false) {
       return loan.maximumRepaymentAmount;
     } else {
-      uint256 loanDurationSoFarInSeconds = now.sub(uint256(loan.loanStartTime));
+      uint256 loanDurationSoFarInSeconds = block.timestamp.sub(uint256(loan.loanStartTime));
       uint256 interestDue = _computeInterestDue(
         loan.loanPrincipalAmount,
         loan.maximumRepaymentAmount,
@@ -457,4 +468,8 @@ contract YourContract is Admin, SigningUtils, ERC721 {
   fallback() external payable {
     revert();
   }
+}
+
+abstract contract ICryptoKittiesCore {
+  function transfer(address _to, uint256 _tokenId) external virtual;
 }

@@ -1,11 +1,13 @@
 pragma solidity >=0.8.0 <0.9.0;
 
-contract SigningUtils {
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
+abstract contract SigningUtils {
   /* *********** */
   /* CONSTRUCTOR */
   /* *********** */
 
-  constructor() internal {}
+  constructor() {}
 
   /* ********* */
   /* FUNCTIONS */
