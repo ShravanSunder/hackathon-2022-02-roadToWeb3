@@ -4,6 +4,7 @@ pragma solidity >=0.8.0 <0.9.0;
 import "hardhat/console.sol";
 
 import "./Admin.sol";
+import "./SigningUtils.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
@@ -453,7 +454,7 @@ contract YourContract is Admin, SigningUtils, ERC721 {
   /* FALLBACK FUNCTION */
   /* ***************** */
 
-  function() external payable {
+  fallback() external payable {
     revert();
   }
 }
