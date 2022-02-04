@@ -2100,6 +2100,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@scaffold-eth/typescript@workspace:."
   dependencies:
+    "@openzeppelin/contracts": ^4.4.2
     eslint: ^8.7.0
     husky: ^7.0.4
     lint-staged: ^12.3.2

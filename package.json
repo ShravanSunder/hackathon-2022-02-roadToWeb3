@@ -95,5 +95,8 @@
          "yarn workspace @scaffold-eth/hardhat format",
          "yarn workspace @scaffold-eth/hardhat solhint --fix"
       ]
+   },
+   "dependencies": {
+      "@openzeppelin/contracts": "^4.4.2"
    }
 }
