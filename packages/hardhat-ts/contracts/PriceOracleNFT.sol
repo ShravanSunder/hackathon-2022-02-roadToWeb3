@@ -36,29 +36,36 @@ contract PriceOracleNFT is ChainlinkClient {
   // 1 day
   uint256 updateFrequency = 60 * 60 * 24;
 
+  // the collection data used by state
   struct CollectionPrice {
     string collectionName;
     uint256 floorPrice;
     uint256 timestamp;
     bytes32 requestId;
   }
-  mapping(string => CollectionPrice) public floorPriceMapping;
 
-  mapping(string => bytes32) private currentRequestsByName;
-
+  // structure to keep track of current requests
   struct CollectionRequests {
     uint256 timestamp;
     string collectionName;
   }
-  mapping(bytes32 => CollectionRequests) private currentRequestsById;
 
+  // state variables
+  /* map of floor price by collection name */
+  mapping(string => CollectionPrice) public floorPriceMapping;
+  /* map of requests by collection name */
+  mapping(string => bytes32) public currentRequestsByName;
+  /* map of requests by requestId */
+  mapping(bytes32 => CollectionRequests) public currentRequestsById;
+
+  // oracle data
   address private oracle;
   bytes32 private jobId;
   uint256 private fee;
 
-  event OpenSeaFloorPriceRequested(bytes32 requestId, string url, uint256 timestamp);
-  event OpenSeaFloorPriceUpdated(bytes32 requestId, uint256 floorPrice, uint256 timestamp);
-  event OpenSeaFloorPriceRereived(bytes32 requestId, uint256 floorPrice, uint256 timestamp);
+  // events
+  event OpenSeaFloorPriceRequested(string collectionName, bytes32 requestId, string url, uint256 timestamp);
+  event OpenSeaFloorPriceUpdated(string collectionName, bytes32 requestId, uint256 floorPrice, uint256 timestamp);
 
   constructor() {
     setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
@@ -111,10 +118,13 @@ contract PriceOracleNFT is ChainlinkClient {
     testStatus = "requesting";
     // send the request
     bytes32 result = sendChainlinkRequestTo(oracle, request, fee);
+
     // save the request data
     currentRequestsById[result] = CollectionRequests(block.timestamp, collectionName);
+    currentRequestsByName[collectionName] = result;
 
-    emit OpenSeaFloorPriceRequested(result, url, block.timestamp);
+    // emit event and save id
+    emit OpenSeaFloorPriceRequested(collectionName, result, url, block.timestamp);
     return result;
   }
 
@@ -124,17 +134,13 @@ contract PriceOracleNFT is ChainlinkClient {
   function fulfill(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
     testStatus = "saving";
 
-    floorPriceMapping[currentRequestsById[_requestId].collectionName] = CollectionPrice(
-      currentRequestsById[_requestId].collectionName,
-      _price,
-      block.timestamp,
-      _requestId
-    );
+    string memory collectionName = currentRequestsById[_requestId].collectionName;
+    floorPriceMapping[collectionName] = CollectionPrice(collectionName, _price, block.timestamp, _requestId);
 
-    emit OpenSeaFloorPriceUpdated(_requestId, _price, block.timestamp);
+    emit OpenSeaFloorPriceUpdated(collectionName, _requestId, _price, block.timestamp);
 
     // delete any current requests
-    delete currentRequestsByName[currentRequestsById[_requestId].collectionName];
+    delete currentRequestsByName[collectionName];
     delete currentRequestsById[_requestId];
     testStatus = "done";
   }
