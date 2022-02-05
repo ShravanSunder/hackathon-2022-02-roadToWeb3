@@ -20,53 +20,26 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
           props.setRoute('/');
         }}
         to="/">
-        Contracts
+        Main
       </Link>
     </Menu.Item>
-    <Menu.Item key="/debug">
+    <Menu.Item key="/your-contract">
       <Link
         onClick={(): void => {
-          props.setRoute('/debug');
+          props.setRoute('/your-contract');
         }}
-        to="/debug">
-        Contracts
+        to="/your-contract">
+        Your Contracts
       </Link>
     </Menu.Item>
-    <Menu.Item key="/hints">
+    <Menu.Item key="/price-oracle-nft">
       <Link
         onClick={(): void => {
-          props.setRoute('/hints');
+          props.setRoute('/price-oracle-nft');
         }}
-        to="/hints">
-        Hints
+        to="/price-oracle-nft">
+        Price Oracle NFT
       </Link>
     </Menu.Item>
-    <Menu.Item key="/exampleui">
-      <Link
-        onClick={(): void => {
-          props.setRoute('/exampleui');
-        }}
-        to="/exampleui">
-        ExampleUI
-      </Link>
-    </Menu.Item>
-    <Menu.Item key="/mainnetdai">
-      <Link
-        onClick={(): void => {
-          props.setRoute('/mainnetdai');
-        }}
-        to="/mainnetdai">
-        Mainnet DAI
-      </Link>
-    </Menu.Item>
-    {/* <Menu.Item key="/subgraph">
-      <Link
-        onClick={() => {
-          props.setRoute('/subgraph');
-        }}
-        to="/subgraph">
-        Subgraph
-      </Link>
-    </Menu.Item> */}
   </Menu>
 );

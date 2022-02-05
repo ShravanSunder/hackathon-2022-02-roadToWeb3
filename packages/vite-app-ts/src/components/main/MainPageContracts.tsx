@@ -1,6 +1,7 @@
 import { GenericContract } from 'eth-components/ant/generic-contract';
 import { useEthersContext } from 'eth-hooks/context';
 import React, { FC } from 'react';
+import { Route } from 'react-router-dom';
 
 import { IScaffoldAppProviders } from '~~/components/main/hooks/useScaffoldAppProviders';
 import { useAppContracts } from '~~/config/contractContext';
@@ -20,6 +21,7 @@ export const MainPageContracts: FC<IMainPageContractsProps> = (props) => {
   const ethersContext = useEthersContext();
   const mainnetDai = useAppContracts('DAI', NETWORKS.mainnet.chainId);
   const yourContract = useAppContracts('YourContract', ethersContext.chainId);
+  const priceContract = useAppContracts('PriceOracleNFT', ethersContext.chainId);
 
   if (ethersContext.account == null) {
     return <></>;
@@ -27,32 +29,22 @@ export const MainPageContracts: FC<IMainPageContractsProps> = (props) => {
 
   return (
     <>
-      <>
-        {/* **********
-          ❓ this scaffolding is full of commonly used components
-          this <Contract/> component will automatically parse your ABI
-          and give you a form to interact with it locally
-        ********** */}
+      <Route path="/your-contract">
         <GenericContract
           contractName="YourContract"
           contract={yourContract}
           mainnetAdaptor={props.scaffoldAppProviders.mainnetAdaptor}
           blockExplorer={props.scaffoldAppProviders.targetNetwork.blockExplorer}
         />
-
-        {/* **********
-         * ❓ uncomment for a second contract:
-         ********** */}
-        {/*
-          <GenericContract
-            contractName="SecondContract"
-            contract={contract={contractList?.['SecondContract']}
-            mainnetProvider={props.appProviders.mainnetProvider}
-            blockExplorer={props.appProviders.targetNetwork.blockExplorer}
-            contractConfig={props.contractConfig}
-          />
-        */}
-      </>
+      </Route>
+      <Route path="/price-oracle-nft">
+        <GenericContract
+          contractName="PriceOracleNFT"
+          contract={priceContract}
+          mainnetAdaptor={props.scaffoldAppProviders.mainnetAdaptor}
+          blockExplorer={props.scaffoldAppProviders.targetNetwork.blockExplorer}
+        />
+      </Route>
     </>
   );
 };
