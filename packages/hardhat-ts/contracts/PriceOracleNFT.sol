@@ -13,18 +13,33 @@ contract PriceOracleNFT is ChainlinkClient {
   bytes32 private jobId;
   uint256 private fee;
 
-  /**
-   * Network: Polygon Mumbai Testnet
-   * Oracle: 0x58bbdbfb6fca3129b91f0dbe372098123b38b5e9
-   * Job ID: da20aae0e4c843f6949e5cb3f7cfe8c4
-   * LINK address: 0x326C977E6efc84E512bB9C30f76E30c160eD06FB
-   * Fee: 0.01 LINK
-   */
-  constructor() public {
+  /*
+    ---------------------------------
+    CHAINLINK-POLYGON NETWORK DETAILS
+    ---------------------------------
+    name: "mumbai",
+    linkToken: "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
+    ethUsdPriceFeed: "0x0715A7794a1dc8e42615F059dD6e406A6594651A",
+    keyHash:
+      "0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4",
+    vrfCoordinator: "0x8C7382F9D8f56b33781fE506E897a4F1e2d17255",
+    oracle: "0x58bbdbfb6fca3129b91f0dbe372098123b38b5e9",
+    jobId: "da20aae0e4c843f6949e5cb3f7cfe8c4",
+
+    name: "polygon",
+    linkToken: "0xb0897686c545045afc77cf20ec7a532e3120e0f1",
+    ethUsdPriceFeed: "0xF9680D99D6C9589e2a93a78A04A279e509205945",
+    keyHash:
+      "0xf86195cf7690c55907b2b611ebb7343a6f649bff128701cc542f0569e2c549da",
+    vrfCoordinator: "0x3d2341ADb2D31f1c5530cDC622016af293177AE0",
+    oracle: "0x0a31078cd57d23bf9e8e8f1ba78356ca2090569e",
+    jobId: "12b86114fa9e46bab3ca436f88e1a912",
+  */
+  constructor() {
     setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
-    oracle = 0xb33D8A4e62236eA91F3a8fD7ab15A95B9B7eEc7D;
-    jobId = stringToBytes32("d5270d1c311941d0b08bead21fea7747");
-    fee = 0.1 * 10**18;
+    oracle = 0x58BBDbfb6fca3129b91f0DBE372098123B38B5e9;
+    jobId = "da20aae0e4c843f6949e5cb3f7cfe8c4";
+    fee = 0.01 * 10**18;
   }
 
   /**
@@ -62,15 +77,15 @@ contract PriceOracleNFT is ChainlinkClient {
     test = "test";
   }
 
-  function stringToBytes32(string memory source) public pure returns (bytes32 result) {
-    bytes memory tempEmptyStringTest = bytes(source);
-    if (tempEmptyStringTest.length == 0) {
-      return 0x0;
-    }
+  //   function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+  //     bytes memory tempEmptyStringTest = bytes(source);
+  //     if (tempEmptyStringTest.length == 0) {
+  //       return 0x0;
+  //     }
 
-    assembly {
-      // solhint-disable-line no-inline-assembly
-      result := mload(add(source, 32))
-    }
-  }
+  //     assembly {
+  //       // solhint-disable-line no-inline-assembly
+  //       result := mload(add(source, 32))
+  //     }
+  //   }
 }
