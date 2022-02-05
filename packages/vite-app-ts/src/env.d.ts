@@ -11,6 +11,8 @@ interface ImportMetaEnv {
   readonly VITE_FAUCET_ALLOWED: boolean;
   readonly VITE_BUERNER_FALLBACK_ALLOWED: boolean;
   readonly CONNECT_TO_BURNER_AUTOMATICALLY: boolean;
+  readonly MORALIS_SERVER: string;
+  readonly MORALIS_APP_ID: string;
 }
 
 interface ImportMeta {

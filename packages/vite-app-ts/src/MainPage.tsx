@@ -19,10 +19,8 @@ import { NETWORKS } from '~~/models/constants/networks';
 
 import { Moralis } from 'moralis';
 
-const MORALIS_SERVER = 'https://mqae4ktqaurd.usemoralis.com:2053/server';
-const MORALIS_APP_ID = 'wZFcpqX8tY96qQXEN7kBM3t349ycH0ITFMPUuWMi';
 // eslint-disable-next-line
-Moralis.start({ serverUrl: MORALIS_SERVER, appId: MORALIS_APP_ID });
+Moralis.start({ serverUrl: import.meta.env.MORALIS_SERVER, appId: import.meta.env.MORALIS_APP_ID });
 
 /**
  * ⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️
