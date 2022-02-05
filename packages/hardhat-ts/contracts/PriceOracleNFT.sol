@@ -13,6 +13,8 @@ contract PriceOracleNFT is ChainlinkClient {
   bytes32 private jobId;
   uint256 private fee;
 
+  event OpenSeaFloorPriceRequested(string url);
+
   /*
     ---------------------------------
     CHAINLINK-POLYGON NETWORK DETAILS
@@ -46,35 +48,30 @@ contract PriceOracleNFT is ChainlinkClient {
    * Create a Chainlink request to retrieve API response, find the target price
    * data, then multiply by 100 (to remove decimal places from price).
    */
-  function requestBTCUSDPrice() public returns (bytes32 requestId) {
+  function requestOpenSeaFloorPrice(string memory collectionName) public returns (bytes32 requestId) {
     Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
 
     // Set the URL to perform the GET request on
-    request.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");
-
-    // Set the path to find the desired data in the API response, where the response format is:
-    // {"RAW":
-    //   {"ETH":
-    //    {"USD":
-    //     {
-    //      "VOLUME24HOUR": xxx.xxx,
-    //     }
-    //    }
-    //   }
-    //  }
-    request.add("path", "RAW.ETH.USD.PRICE");
+    string memory url = conactUrl(collectionName);
+    request.add("get", url);
+    request.add("path", "stats.floor_price");
 
     // // Multiply the result by 1000000000000000000 to remove decimals
-    // int256 timesAmount = 10**18;
-    // request.addInt("times", timesAmount);
+    int256 timesAmount = 10**18;
+    request.addInt("times", timesAmount);
 
     // Sends the request
+    emit OpenSeaFloorPriceRequested(url);
     return sendChainlinkRequestTo(oracle, request, fee);
   }
 
   function fulfill(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
     price = _price;
     test = "test";
+  }
+
+  function conactUrl(string memory slug) private pure returns (string memory) {
+    return string(abi.encodePacked("https://api.opensea.io/api/v1/collection/", slug, "/stats"));
   }
 
   //   function stringToBytes32(string memory source) public pure returns (bytes32 result) {
