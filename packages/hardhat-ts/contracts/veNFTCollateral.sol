@@ -4,6 +4,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+error LOAN_ACTIVE();
+error LOAN_DURATION_NOT_COMPLETE();
+error NOT_LENDER();
+error LOAN_DURATION_COMPLETE();
+error NOT_BORROWER();
+error LOAN_INACTIVE();
+
 contract veNFTCollateral is ERC20 {
   IERC20 public lendingToken;
 
@@ -16,26 +23,62 @@ contract veNFTCollateral is ERC20 {
     uint256 loanId;
     uint256 loanPrincipalAmount;
     uint256 borrowedAmount;
-    int256 nftCollateralId;
     uint8 collateralRatio;
     uint56 loanStartTime;
     uint32 loanDuration;
-    address nftCollateralContract;
     address borrower;
     address lender;
+    bytes nftCollateralParams;
+    // reward related params for the lender
+    uint256 lastUpdateTime;
+    uint256 rewardRate;
+    uint256 rewardPerTokenStored;
+    uint256 userRewardPerTokenPaid;
+    uint256 rewards;
   }
 
   // @notice A mapping from a loan's identifier to the loan's details,
-  //         represted by the loan struct. To fetch the lender, call
-  //         NFTfi.ownerOf(loanId).
   mapping(uint256 => Loan) public loanIdToLoan;
 
-  // @notice A mapping tracking whether a loan has either been repaid or
-  //         liquidated. This prevents an attacker trying to repay or
-  //         liquidate the same loan twice.
+  // @notice A mapping tracking whether a loan is active or not, thet status changes to inactive if the borrower doesn't payback uptill the duration or if the loan is paid
   mapping(uint256 => bool) public loanStatus;
 
+  //*********************************************************************//
+  // ------------------------- reward calculation methods -------------------------- //
+  //*********************************************************************//
+
+  function updateReward(Loan memory loan) public {
+    loan.rewardPerTokenStored = uint128(rewardPerToken(loan));
+    loan.lastUpdateTime = lastTimeRewardApplicable(loan);
+    if (loan.lender != address(0)) {
+      loan.rewards = uint128(earned(loan));
+      loan.userRewardPerTokenPaid = loan.rewardPerTokenStored;
+    }
+  }
+
+  function earned(Loan memory loan) public view returns (uint256) {
+    return (loan.loanPrincipalAmount * (rewardPerToken(loan) - (loan.userRewardPerTokenPaid))) / (1e18) + (loan.rewards);
+  }
+
+  function lastTimeRewardApplicable(Loan memory loan) public view returns (uint256) {
+    return block.timestamp < loan.loanDuration ? block.timestamp : loan.loanDuration;
+  }
+
+  function rewardPerToken(Loan memory loan) public view returns (uint256) {
+    if (lendingToken.balanceOf(address(this)) == 0) {
+      return loan.rewardPerTokenStored;
+    }
+    return
+      loan.rewardPerTokenStored +
+      (lastTimeRewardApplicable(loan) - ((loan.lastUpdateTime) * (loan.rewardRate) * (1e18)) / (lendingToken.balanceOf(address(this))));
+  }
+
+  //*********************************************************************//
+  // ------------------------- constuctor -------------------------- //
+  //*********************************************************************//
   constructor(IERC20 _lendingToken) ERC20("Reward", "REWARD") {
+    // minting rewards
+    _mint(address(this), 1000 ether);
     lendingToken = _lendingToken;
   }
 
@@ -53,13 +96,17 @@ contract veNFTCollateral is ERC20 {
       collateralRatio: _collateralRatio,
       lender: msg.sender,
       borrowedAmount: 0,
-      nftCollateralId: -1,
-      nftCollateralContract: address(0),
-      borrower: address(0)
+      nftCollateralParams: abi.encode(-1, address(0)),
+      borrower: address(0),
+      rewardRate: uint128(IERC20(address(this)).balanceOf(address(this)) / (_duration)),
+      lastUpdateTime: block.timestamp,
+      rewardPerTokenStored: 0,
+      userRewardPerTokenPaid: 0,
+      rewards: 0
     });
     loanIdToLoan[totalNumLoans] = loan;
-    loanStatus[totalNumLoans] = false;
     totalNumLoans += 1;
+    updateReward(loan);
     lendingToken.transferFrom(msg.sender, address(this), _amount);
   }
 
@@ -69,37 +116,72 @@ contract veNFTCollateral is ERC20 {
     address _nftCollateralContract,
     uint256 _borrowAmount
   ) external {
-    // TODO Add custom errors for the input checks and to see if the loan is active i.e someone has already borrowed it
-    // Add events
-    // get nft price the borrow amount = collateralRatio % of the loanPrincipalAmount and if this amt is more than borrowedAmount then send borrowedAmount else send the newly calculated amount
+    // TODO Add custom errors for the input checks and Add events
+    if (loanStatus[_loanID]) {
+      revert LOAN_ACTIVE();
+    }
     Loan memory loan = loanIdToLoan[_loanID];
-    loan.nftCollateralId = int256(_nftCollateralId);
-    loan.nftCollateralContract = _nftCollateralContract;
+    // *** NEEDS TO BE FETCHED FROM THE ORACLE ***
+    uint256 nftPrice = 30 ether;
+    // calculate the borrow amount
+    uint256 maxBorrowAmount = (nftPrice * loan.collateralRatio) / 100;
+    if (_borrowAmount < maxBorrowAmount) {
+      maxBorrowAmount = _borrowAmount;
+    }
+    loan.nftCollateralParams = abi.encode(int256(_nftCollateralId), _nftCollateralContract);
     loan.borrower = msg.sender;
+    // defualt value is false
+    loanStatus[_loanID] = true;
+    // locking in the nft
     IERC721(_nftCollateralContract).safeTransferFrom(msg.sender, address(this), uint256(_nftCollateralId));
-    // using _borrowAmount for now ***** TO BE UPDATED
-    lendingToken.transfer(msg.sender, _borrowAmount);
+    // sending the borrowed amount
+    lendingToken.transfer(msg.sender, maxBorrowAmount);
   }
 
   function claimDeposit(uint256 _loanID) external {
-    // TODO checks for if loan is active and the duration amount has passed in and the msg.sender is the lender
-    // Add events
+    // TODO Add events
     Loan memory loan = loanIdToLoan[_loanID];
+    if (block.timestamp <= loan.loanDuration) {
+      revert LOAN_DURATION_NOT_COMPLETE();
+    }
+    if (msg.sender != loan.lender) {
+      revert NOT_LENDER();
+    }
+    if (!loanStatus[_loanID]) {
+      revert LOAN_INACTIVE();
+    }
+    (int256 tokenID, address nftContract) = abi.decode(loan.nftCollateralParams, (int256, address));
+    bool _loanStatus = loanStatus[_loanID];
+    uint256 _loanPrincipalAmount = loan.loanPrincipalAmount;
+    uint256 _rewards = loan.rewards;
+    delete loanIdToLoan[_loanID];
     // check if repaid or not if not **  TO BE UPDATED
-    IERC721(loan.nftCollateralContract).safeTransferFrom(address(this), msg.sender, uint256(loan.nftCollateralId));
-    // if yes
-    lendingToken.transfer(msg.sender, loan.loanPrincipalAmount);
-    // additionally the lender get's erc20 rewards i.e the reward token based on the loan start time and the claim time  **  TO BE UPDATED
+    if (_loanStatus) {
+      IERC721(nftContract).safeTransferFrom(address(this), msg.sender, uint256(tokenID));
+    } else {
+      lendingToken.transfer(msg.sender, _loanPrincipalAmount);
+    }
+    // sending the accured rewards
+    IERC20(address(this)).transfer(msg.sender, _rewards);
   }
 
   function repay(uint256 _loanID) external {
-    // for now we will will consider the borrower only will pay the borrowed amount and not the interest, will need to think of the interest logic a bit more
-    // TODO checks for if loan is active and the duration amount has passed in and the msg.sender is the borrower
-    // Add events
+    // for now we will will consider the borrower only will pay the borrowed amount and not the interest
+    // TODO Add events
     Loan memory loan = loanIdToLoan[_loanID];
-    loanStatus[_loanID] = true;
-    IERC721(loan.nftCollateralContract).safeTransferFrom(address(this), msg.sender, uint256(loan.nftCollateralId));
-    lendingToken.transferFrom(msg.sender, address(this), loan.borrowedAmount);
-    // additionally the borrower also get's erc20 rewards i.e the reward token based on the loan start time and the claim time  **  TO BE UPDATED
+    if (block.timestamp > loan.loanDuration) {
+      revert LOAN_DURATION_COMPLETE();
+    }
+    if (msg.sender != loan.borrower) {
+      revert NOT_BORROWER();
+    }
+    if (!loanStatus[_loanID]) {
+      revert LOAN_INACTIVE();
+    }
+    (int256 tokenID, address nftContract) = abi.decode(loan.nftCollateralParams, (int256, address));
+    uint256 _borrowedAmount = loan.borrowedAmount;
+    delete loanIdToLoan[_loanID];
+    IERC721(nftContract).safeTransferFrom(address(this), msg.sender, uint256(tokenID));
+    lendingToken.transferFrom(msg.sender, address(this), _borrowedAmount);
   }
 }
