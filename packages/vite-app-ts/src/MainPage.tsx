@@ -108,6 +108,9 @@ export const Main: FC = () => {
         <MainPageMenu route={route} setRoute={setRoute} />
         <Switch>
           <Route exact path="/">
+            <button className="btn btn-primary">daisyUI Button</button>
+          </Route>
+          <Route exact path="/debug">
             <MainPageContracts scaffoldAppProviders={scaffoldAppProviders} />
           </Route>
           {/* you can add routes here like the below examlples */}

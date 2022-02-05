@@ -2167,6 +2167,7 @@ __metadata:
     axios: ^0.25.0
     buffer: ^6.0.3
     cross-env: ^7.0.3
+    daisyui: ^1.25.4
     eslint: ^8.7.0
     eslint-config-airbnb: ^19.0.4
     eslint-config-airbnb-typescript: ^16.1.0
@@ -7218,6 +7219,13 @@ __metadata:
     es5-ext: ^0.10.50
     type: ^1.0.1
   checksum: 49ca0639c7b822db670de93d4fbce44b4aa072cd848c76292c9978a8cd0fff1028763020ff4b0f147bd77bfe29b4c7f82e0f71ade76b2a06100543cdfd948d19
+  languageName: node
+  linkType: hard
+
+"daisyui@npm:^1.25.4":
+  version: 1.25.4
+  resolution: "daisyui@npm:1.25.4"
+  checksum: f371ff1edbe2e51efddb5d463288e6966c2feeb8aa85883a433510c709a453caf2505d7b6adebbf14016775cd74faa5fe4e7439b6c95faff4119ba41eb596896
   languageName: node
   linkType: hard
 
