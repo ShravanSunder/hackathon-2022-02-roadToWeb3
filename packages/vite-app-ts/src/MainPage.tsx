@@ -17,6 +17,11 @@ import { BURNER_FALLBACK_ENABLED, MAINNET_PROVIDER } from '~~/config/appConfig';
 import { useAppContracts, useConnectAppContracts, useLoadAppContracts } from '~~/config/contractContext';
 import { NETWORKS } from '~~/models/constants/networks';
 
+import { Moralis } from 'moralis';
+
+// eslint-disable-next-line
+Moralis.start({ serverUrl: import.meta.env.MORALIS_SERVER, appId: import.meta.env.MORALIS_APP_ID });
+
 /**
  * ⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️
  * See config/appConfig.ts for configuration, such as TARGET_NETWORK
@@ -96,6 +101,15 @@ export const Main: FC = () => {
   useEffect(() => {
     setRoute(window.location.pathname);
   }, [setRoute]);
+
+  useEffect(() => {
+    const fetchNfts: () => void = async () => {
+      if (!ethersContext.account) return;
+      const polygonNFTs = await Moralis.Web3API.account.getNFTs({ chain: 'polygon', address: ethersContext.account });
+      console.log('polygonNFTs', polygonNFTs);
+    };
+    fetchNfts();
+  }, [ethersContext.account]);
 
   return (
     <div className="App">
