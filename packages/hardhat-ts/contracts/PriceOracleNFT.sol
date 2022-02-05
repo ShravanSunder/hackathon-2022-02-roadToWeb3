@@ -75,30 +75,30 @@ contract PriceOracleNFT is ChainlinkClient {
   }
 
   /**
-   * Create a Chainlink request to retrieve API response, find the target price
-   * data, then multiply by 10**18 (to remove decimal places from price).
+   * This will call an api via chainlink to get the floor price of a collection
+   * @param _collectionSlug the slug for the collection in openSea
    */
-  function requestOpenSeaFloorPrice(string memory collectionName) public returns (bytes32 requestId) {
+  function requestOpenSeaFloorPrice(string memory _collectionSlug) public returns (bytes32 requestId) {
     testStatus = "check recent";
 
     // check if there is already a result that's recent
-    if (floorPriceMapping[collectionName].timestamp != 0) {
-      if (block.timestamp - floorPriceMapping[collectionName].timestamp < updateFrequency) {
-        return floorPriceMapping[collectionName].requestId;
+    if (floorPriceMapping[_collectionSlug].timestamp != 0) {
+      if (block.timestamp - floorPriceMapping[_collectionSlug].timestamp < updateFrequency) {
+        return floorPriceMapping[_collectionSlug].requestId;
       }
     }
 
     testStatus = "check requests";
 
     // check if a request is in progress that's valid
-    if (currentRequestsByName[collectionName] != 0 && currentRequestsById[currentRequestsByName[collectionName]].timestamp != 0) {
-      if (block.timestamp - currentRequestsById[currentRequestsByName[collectionName]].timestamp < updateFrequency) {
-        return currentRequestsByName[collectionName];
+    if (currentRequestsByName[_collectionSlug] != 0 && currentRequestsById[currentRequestsByName[_collectionSlug]].timestamp != 0) {
+      if (block.timestamp - currentRequestsById[currentRequestsByName[_collectionSlug]].timestamp < updateFrequency) {
+        return currentRequestsByName[_collectionSlug];
       }
 
       // if there any current request and its too old, delete it and refetch
-      delete currentRequestsById[currentRequestsByName[collectionName]];
-      delete currentRequestsByName[collectionName];
+      delete currentRequestsById[currentRequestsByName[_collectionSlug]];
+      delete currentRequestsByName[_collectionSlug];
     }
 
     testStatus = "create request";
@@ -107,7 +107,7 @@ contract PriceOracleNFT is ChainlinkClient {
     Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
 
     // Set the URL to perform the GET request on
-    string memory url = conactUrl(collectionName);
+    string memory url = conactUrl(_collectionSlug);
     request.add("get", url);
     request.add("path", "stats.floor_price");
 
@@ -120,11 +120,11 @@ contract PriceOracleNFT is ChainlinkClient {
     bytes32 result = sendChainlinkRequestTo(oracle, request, fee);
 
     // save the request data
-    currentRequestsById[result] = CollectionRequests(block.timestamp, collectionName);
-    currentRequestsByName[collectionName] = result;
+    currentRequestsById[result] = CollectionRequests(block.timestamp, _collectionSlug);
+    currentRequestsByName[_collectionSlug] = result;
 
     // emit event and save id
-    emit OpenSeaFloorPriceRequested(collectionName, result, url, block.timestamp);
+    emit OpenSeaFloorPriceRequested(_collectionSlug, result, url, block.timestamp);
     return result;
   }
 
