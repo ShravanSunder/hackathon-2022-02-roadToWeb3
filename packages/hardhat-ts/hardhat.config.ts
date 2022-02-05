@@ -116,14 +116,14 @@ const config: HardhatUserConfig = {
     },
     matic: {
       url: 'https://rpc-mainnet.maticvigil.com/',
-      gasPrice: 2010000000,
+      gasPrice: 1100000000,
       accounts: {
         mnemonic: getMnemonic(),
       },
     },
     mumbai: {
       url: 'https://rpc-mumbai.maticvigil.com/',
-      gasPrice: 2010000000,
+      gasPrice: 1100000000,
       accounts: {
         mnemonic: getMnemonic(),
       },
