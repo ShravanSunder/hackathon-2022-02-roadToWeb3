@@ -3,7 +3,8 @@ pragma solidity >=0.8.0 <0.9.0;
 
 import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
-contract APIConsumer is ChainlinkClient {
+contract PriceOracleNFT is ChainlinkClient {
+  using Chainlink for Chainlink.Request;
   uint256 public price;
 
   address private oracle;
