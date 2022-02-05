@@ -29,7 +29,7 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
           props.setRoute('/your-contract');
         }}
         to="/your-contract">
-        Your Contracts
+        Debug: Your Contract
       </Link>
     </Menu.Item>
     <Menu.Item key="/price-oracle-nft">
@@ -38,7 +38,7 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
           props.setRoute('/price-oracle-nft');
         }}
         to="/price-oracle-nft">
-        Price Oracle NFT
+        Debug: Price Oracle NFT
       </Link>
     </Menu.Item>
   </Menu>
