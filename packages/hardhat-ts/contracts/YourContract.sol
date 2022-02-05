@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol"; //https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
 
-contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
+contract YourContract is Admin, SigningUtils {
   using SafeMath for uint256;
 
   struct Loan {
@@ -215,7 +215,7 @@ contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
 
     // Issue an ERC721 promissory note to the lender that gives them the
     // right to either the principal-plus-interest or the collateral.
-    _mint(_lender, loan.loanId);
+    // _mint(_lender, loan.loanId);
 
     // Emit an event with all relevant details from this transaction.
     emit LoanStarted(
@@ -249,7 +249,7 @@ contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
     require(msg.sender == loan.borrower, "Only the borrower can pay back a loan and reclaim the underlying NFT");
 
     // Fetch current owner of loan promissory note.
-    address lender = ownerOf(_loanId);
+    address lender = address(0); //ownerOf(_loanId);
 
     // Calculate amounts to send to lender and admins
     uint256 interestDue = (loan.maximumRepaymentAmount).sub(loan.loanPrincipalAmount);
@@ -282,7 +282,7 @@ contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
     require(_transferNftToAddress(loan.nftCollateralContract, loan.nftCollateralId, loan.borrower), "NFT was not successfully transferred");
 
     // Destroy the lender's promissory note.
-    _burn(_loanId);
+    // _burn(_loanId);
 
     // Emit an event with all relevant details from this transaction.
     emit LoanRepaid(
@@ -321,7 +321,7 @@ contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
 
     // Fetch the current lender of the promissory note corresponding to
     // this overdue loan.
-    address lender = ownerOf(_loanId);
+    address lender = address(0); //ownerOf(_loanId);
 
     // Mark loan as liquidated before doing any external transfers to
     // follow the Checks-Effects-Interactions design pattern.
@@ -337,7 +337,7 @@ contract YourContract is Admin, SigningUtils, ERC721, IERC20 {
     // Destroy the lender's promissory note for this loan, since by seizing
     // the collateral, the lender has forfeit the rights to the loan
     // principal-plus-interest.
-    _burn(_loanId);
+    // _burn(_loanId);
 
     // Emit an event with all relevant details from this transaction.
     emit LoanLiquidated(
