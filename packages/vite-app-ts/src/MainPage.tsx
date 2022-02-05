@@ -10,6 +10,7 @@ import { asEthersAdaptor } from 'eth-hooks/functions';
 
 import { MainPageMenu, MainPageContracts, MainPageFooter, MainPageHeader } from './components/main';
 import { useScaffoldHooksExamples as useScaffoldHooksExamples } from './components/main/hooks/useScaffoldHooksExamples';
+import { Borrow, Lend } from './components/pages';
 
 import { useBurnerFallback } from '~~/components/main/hooks/useBurnerFallback';
 import { useScaffoldProviders as useScaffoldAppProviders } from '~~/components/main/hooks/useScaffoldAppProviders';
@@ -120,7 +121,13 @@ export const Main: FC = () => {
         <MainPageMenu route={route} setRoute={setRoute} />
         <Switch>
           <Route exact path="/">
-            <button className="btn btn-primary">daisyUI Button</button>
+            <Lend></Lend>
+          </Route>
+          <Route exact path="/lend">
+            <Lend></Lend>
+          </Route>
+          <Route exact path="/borrow">
+            <Borrow></Borrow>
           </Route>
           <MainPageContracts scaffoldAppProviders={scaffoldAppProviders} />
         </Switch>
