@@ -83,7 +83,8 @@ contract PriceOracleNFT is ChainlinkClient {
   uint256 private callId = 0;
   // oracle data
   address private oracle;
-  bytes32 private jobId;
+  bytes32 private u256JobId;
+  bytes32 private bytes32JobId;
   uint256 private fee;
 
   // events
@@ -95,7 +96,8 @@ contract PriceOracleNFT is ChainlinkClient {
   constructor() {
     setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
     oracle = 0x58BBDbfb6fca3129b91f0DBE372098123B38B5e9;
-    jobId = "da20aae0e4c843f6949e5cb3f7cfe8c4";
+    u256JobId = "da20aae0e4c843f6949e5cb3f7cfe8c4";
+    bytes32JobId = "a7330d0b4b964c05abc66a26307047c0";
     fee = 0.01 * 10**18;
   }
 
@@ -146,7 +148,7 @@ contract PriceOracleNFT is ChainlinkClient {
     testStatus = "requestOpenSeaCollectionSlug";
 
     // create a new request
-    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillCollectionSlug.selector);
+    Chainlink.Request memory request = buildChainlinkRequest(bytes32JobId, address(this), this.fulfillCollectionSlug.selector);
 
     // Set the URL to perform the GET request on
     string memory url = getContractUrl(toString(_collectionAddress));
@@ -205,7 +207,7 @@ contract PriceOracleNFT is ChainlinkClient {
     testStatus = "requestOpenSeaFloorPrice: create request";
 
     // create a new request
-    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillFloorPrice.selector);
+    Chainlink.Request memory request = buildChainlinkRequest(u256JobId, address(this), this.fulfillFloorPrice.selector);
 
     // Set the URL to perform the GET request on
     string memory url = getStatsUrl(_collectionSlug);
