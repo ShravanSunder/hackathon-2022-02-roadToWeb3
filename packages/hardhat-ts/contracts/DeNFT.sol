@@ -746,11 +746,16 @@ interface IERC721Metadata is IERC721 {
   function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
+// OpenZeppelin Contracts v4.4.1 (token/ERC721/ERC721.sol)
+
+pragma solidity ^0.8.0;
+
 /**
  * @dev Implementation of https://eips.ethereum.org/EIPS/eip-721[ERC721] Non-Fungible Token Standard, including
  * the Metadata extension, but not including the Enumerable extension, which is available separately as
  * {ERC721Enumerable}.
  */
+
 contract ERC721 is Context, ERC165, IERC721, IERC721Metadata {
   using Address for address;
   using Strings for uint256;
