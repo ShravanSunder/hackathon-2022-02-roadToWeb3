@@ -116,7 +116,7 @@ export const Main: FC = () => {
             <Lend></Lend>
           </Route>
           <Route exact path="/borrow">
-            <Borrow></Borrow>
+            <Borrow mainnetProvider={scaffoldAppProviders.mainnetAdaptor?.provider}></Borrow>
           </Route>
           <MainPageContracts scaffoldAppProviders={scaffoldAppProviders} />
         </Switch>
