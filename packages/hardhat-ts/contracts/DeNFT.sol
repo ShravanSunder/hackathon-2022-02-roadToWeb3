@@ -765,6 +765,17 @@ contract DeNFT is ERC20, IERC721Receiver {
   }
 
   /**
+   Fetches NFT Floor Price
+  */
+
+  function floor(address nftCollateralContract) public view returns (uint256) {
+    if (nftCollateralContract.totalSupply() == 0) {
+      return nftCollateralContract.balance;
+    }
+    return nftCollateralContract.balance / nftCollateralContract.totalSupply();
+  }
+
+  /**
     @notice
     Needs to be called by the lender to ceate a loan and deposit capital
     // _duration is in seconds.
