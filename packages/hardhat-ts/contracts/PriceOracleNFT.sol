@@ -103,6 +103,7 @@ contract PriceOracleNFT is ChainlinkClient {
   function testCallback(uint256 _price) public {}
 
   function test(address _collectionAddress) public {
+    testStatus = "test";
     Callback memory c = Callback(address(this), this.testCallback.selector);
     getFloorPrice(_collectionAddress, c);
   }
@@ -115,15 +116,22 @@ contract PriceOracleNFT is ChainlinkClient {
   function getFloorPrice(address _collectionAddress, Callback memory _callback) public returns (bytes20) {
     callId++;
     bytes16 guid = bytes16(keccak256(abi.encodePacked(callId)));
+    testStatus = "getFloorPrice";
+
+    // if (ERC20Interface(oracle).balanceOf(address(this)) == 0) {
+    //   revert NoLinkTokenInContract();
+    // }
 
     if (bytes(addressToCollectionSlugMap[_collectionAddress]).length == 0) {
+      testStatus = "getFloorPrice: no slug";
       // we don't have slug for this collection contract
-      addressToCallInfoMap[_collectionAddress] = CallInfo(guid, 0, 0, _callback);
+      addressToCallInfoMap[_collectionAddress] = CallInfo(0, 0, _callback);
       bytes32 result = requestOpenSeaCollectionSlug(_collectionAddress);
       addressToCallInfoMap[_collectionAddress].slugRequestId = result;
     } else {
+      testStatus = "getFloorPrice: floor price";
       // we have slug for this collection contract
-      addressToCallInfoMap[_collectionAddress] = CallInfo(guid, 0, 0, _callback);
+      addressToCallInfoMap[_collectionAddress] = CallInfo(0, 0, _callback);
       bytes32 result = requestOpenSeaFloorPrice(_collectionAddress, addressToCollectionSlugMap[_collectionAddress]);
       addressToCallInfoMap[_collectionAddress].floorPriceRequestId = result;
     }
@@ -136,6 +144,8 @@ contract PriceOracleNFT is ChainlinkClient {
    * @param _collectionAddress address of contract
    */
   function requestOpenSeaCollectionSlug(address _collectionAddress) internal returns (bytes32 requestId) {
+    testStatus = "requestOpenSeaCollectionSlug";
+
     // create a new request
     Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillCollectionSlug.selector);
 
@@ -171,7 +181,7 @@ contract PriceOracleNFT is ChainlinkClient {
    * @param _collectionSlug the slug for the collection in openSea
    */
   function requestOpenSeaFloorPrice(address _collectionAddress, string memory _collectionSlug) internal returns (bytes32 requestId) {
-    testStatus = "check recent";
+    testStatus = "requestOpenSeaFloorPrice";
 
     // check if there is already a result that's recent
     if (floorPriceMap[_collectionAddress].timestamp != 0) {
@@ -179,10 +189,9 @@ contract PriceOracleNFT is ChainlinkClient {
         return floorPriceMap[_collectionAddress].requestId;
       }
     }
-
-    testStatus = "check requests";
-
     bytes32 floorPriceRequestId = addressToCallInfoMap[_collectionAddress].floorPriceRequestId;
+
+    testStatus = "requestOpenSeaFloorPrice: check existing";
 
     // check if a request is in progress that's valid
     if (floorPriceRequestId != 0 && floorPriceRequestsById[floorPriceRequestId].timestamp != 0) {
@@ -194,7 +203,7 @@ contract PriceOracleNFT is ChainlinkClient {
       delete floorPriceRequestsById[floorPriceRequestId];
     }
 
-    testStatus = "create request";
+    testStatus = "requestOpenSeaFloorPrice: create request";
 
     // create a new request
     Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillFloorPrice.selector);
@@ -224,6 +233,8 @@ contract PriceOracleNFT is ChainlinkClient {
    *  Callback function to retrieve the response from the Chainlink request.
    */
   function fulfillFloorPrice(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
+    testStatus = "fulfillFloorPrice";
+
     address collectionAddress = floorPriceRequestsById[_requestId].collectionAddress;
     floorPriceMap[collectionAddress] = CollectionPrice(_price, block.timestamp, _requestId);
 
@@ -281,17 +292,27 @@ contract PriceOracleNFT is ChainlinkClient {
     return string(str);
   }
 
-  // maybe needed for polygon job id? not for mumbai and job id  https://github.com/smartcontractkit/documentation/issues/513
+  function bytes32ToString(bytes32 _bytes32) public pure returns (string memory) {
+    uint8 i = 0;
+    while (i < 32 && _bytes32[i] != 0) {
+      i++;
+    }
+    bytes memory bytesArray = new bytes(i);
+    for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+      bytesArray[i] = _bytes32[i];
+    }
+    return string(bytesArray);
+  }
 
-  //   function stringToBytes32(string memory source) public pure returns (bytes32 result) {
-  //     bytes memory tempEmptyStringTest = bytes(source);
-  //     if (tempEmptyStringTest.length == 0) {
-  //       return 0x0;
-  //     }
+  function stringToBytes32(string memory source) public pure returns (bytes32 result) {
+    bytes memory tempEmptyStringTest = bytes(source);
+    if (tempEmptyStringTest.length == 0) {
+      return 0x0;
+    }
 
-  //     assembly {
-  //       // solhint-disable-line no-inline-assembly
-  //       result := mload(add(source, 32))
-  //     }
-  //   }
+    assembly {
+      // solhint-disable-line no-inline-assembly
+      result := mload(add(source, 32))
+    }
+  }
 }
