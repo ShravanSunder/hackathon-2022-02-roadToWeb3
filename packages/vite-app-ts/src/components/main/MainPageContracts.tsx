@@ -23,6 +23,7 @@ export const MainPageContracts: FC<IMainPageContractsProps> = (props) => {
   // const yourContract = useAppContracts('YourContract', ethersContext.chainId);
   const priceContract = useAppContracts('PriceOracleNFT', ethersContext.chainId);
   const deNft = useAppContracts('DeNFT', ethersContext.chainId);
+  const mockToken = useAppContracts('MockERC20', ethersContext.chainId);
 
   if (ethersContext.account == null) {
     return <></>;
@@ -42,6 +43,14 @@ export const MainPageContracts: FC<IMainPageContractsProps> = (props) => {
         <GenericContract
           contractName="PriceOracleNFT"
           contract={priceContract}
+          mainnetAdaptor={props.scaffoldAppProviders.mainnetAdaptor}
+          blockExplorer={props.scaffoldAppProviders.targetNetwork.blockExplorer}
+        />
+      </Route>
+      <Route path="/mock-token">
+        <GenericContract
+          contractName="MockERC20"
+          contract={mockToken}
           mainnetAdaptor={props.scaffoldAppProviders.mainnetAdaptor}
           blockExplorer={props.scaffoldAppProviders.targetNetwork.blockExplorer}
         />

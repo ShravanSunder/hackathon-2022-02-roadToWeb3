@@ -59,5 +59,14 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
         Debug: Price Oracle NFT
       </Link>
     </Menu.Item>
+    <Menu.Item key="/mock-token">
+      <Link
+        onClick={(): void => {
+          props.setRoute('/mock-token');
+        }}
+        to="/mock-token">
+        Debug: MockERC20
+      </Link>
+    </Menu.Item>
   </Menu>
 );

@@ -2,11 +2,14 @@ import { transactor } from 'eth-components/functions';
 import { EthComponentsSettingsContext } from 'eth-components/models';
 import { useGasPrice } from 'eth-hooks';
 import { useEthersContext } from 'eth-hooks/context';
+import { utils } from 'ethers';
 import { FC, useContext, useState } from 'react';
+
+import { useAppContracts } from '~~/config/contractContext';
 
 export const Lend: FC = (props) => {
   const ethersContext = useEthersContext();
-  //   const veNFT = useAppContracts('veNFTCollateral', NETWORKS.mumbai.chainId);
+  const deNFT = useAppContracts('DeNFT', ethersContext.chainId);
 
   const ethComponentsSettings = useContext(EthComponentsSettingsContext);
   const [gasPrice] = useGasPrice(ethersContext.chainId, 'fast');
@@ -58,7 +61,22 @@ export const Lend: FC = (props) => {
             }}
           />
         </div>
-        <button className="btn btn-primary">Deposit</button>
+        <button
+          className="btn btn-primary"
+          onClick={async (): Promise<void> => {
+            console.log('click');
+            const result = await tx?.(
+              deNFT?.depositLoanCapital(
+                utils.parseEther(amount.toString()),
+                duration.toString(),
+                collateralRatio.toString()
+              )
+            );
+
+            console.log(result);
+          }}>
+          Deposit
+        </button>
       </div>
     </>
   );
