@@ -1,9 +1,11 @@
 import { StaticJsonRpcProvider } from '@ethersproject/providers';
 import { Address } from 'eth-components/ant';
-import { useContractReader } from 'eth-hooks';
+import { transactor } from 'eth-components/functions';
+import { EthComponentsSettingsContext } from 'eth-components/models';
+import { useContractReader, useGasPrice } from 'eth-hooks';
 import { useEthersContext } from 'eth-hooks/context';
 import { BigNumber, utils } from 'ethers';
-import { FC, useEffect, useState } from 'react';
+import { FC, useContext, useEffect, useState } from 'react';
 import { useNFTBalances } from 'react-moralis';
 
 import { useAppContracts } from '~~/config/contractContext';
@@ -25,6 +27,10 @@ export const Borrow: FC<IBorrowProps> = (props) => {
   const { getNFTBalances, data, error, isLoading, isFetching } = useNFTBalances();
   const ethersContext = useEthersContext();
   const deNFT = useAppContracts('DeNFT', ethersContext.chainId);
+
+  const ethComponentsSettings = useContext(EthComponentsSettingsContext);
+  const [gasPrice] = useGasPrice(ethersContext.chainId, 'fast');
+  const tx = transactor(ethComponentsSettings, ethersContext?.signer, gasPrice);
 
   const [numberOfLoans] = useContractReader(deNFT, deNFT?.totalNumLoans);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -52,14 +58,14 @@ export const Borrow: FC<IBorrowProps> = (props) => {
       () => {},
       () => {}
     );
-  }, [ethersContext.account]);
+  }, [numberOfLoans]);
 
   useEffect(() => {
     getNFTBalances({ params: { address: ethersContext.account ?? '', chain: 'mumbai' } }).then(
       () => {},
       () => {}
     );
-  }, [numberOfLoans]);
+  }, [ethersContext.account]);
 
   useEffect(() => {});
   return (
@@ -88,7 +94,16 @@ export const Borrow: FC<IBorrowProps> = (props) => {
                   <h2 className="card-title">{nft.name}</h2>
                   <p className="overflow-y-auto max-h-20 text-clip ...">{nft.metadata.description}</p>
                   <div className="justify-end card-actions">
-                    <button className="btn btn-secondary">Borrow</button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={async (): Promise<void> => {
+                        const result = await tx?.(
+                          deNFT?.borrow(0, nft.token_id, nft.token_address, utils.parseEther('1'))
+                        );
+                        console.log(result);
+                      }}>
+                      Borrow
+                    </button>
                   </div>
                 </div>
               </div>

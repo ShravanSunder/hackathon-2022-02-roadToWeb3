@@ -25,6 +25,11 @@ export const contractConnectorConfig = () => {
     const result = {
       // 🙋🏽‍♂️ Add your hadrdhat contracts here
       DeNFT: createConnectorForHardhatContract('DeNFT', hardhatContracts.DeNFT__factory, hardhatContractsJson),
+      MockNFTContract: createConnectorForHardhatContract(
+        'MockNFTContract',
+        hardhatContracts.MockNFTContract__factory,
+        hardhatContractsJson
+      ),
       MockERC20: createConnectorForHardhatContract(
         'MockERC20',
         hardhatContracts.MockERC20__factory,
