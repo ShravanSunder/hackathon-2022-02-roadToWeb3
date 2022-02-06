@@ -100,6 +100,13 @@ contract PriceOracleNFT is ChainlinkClient {
     fee = 0.01 * 10**18;
   }
 
+  function testCallback(uint256 _price) public {}
+
+  function test(address _collectionAddress) public {
+    Callback memory c = Callback(address(this), this.testCallback.selector);
+    getFloorPrice(_collectionAddress, c);
+  }
+
   /**
    * This is the function to call to get the floor price of a NFT from opensea api using Chainlink
    * @param _collectionAddress address of the collection
