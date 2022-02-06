@@ -100,6 +100,11 @@ contract PriceOracleNFT is ChainlinkClient {
     fee = 0.01 * 10**18;
   }
 
+  /**
+   * This is the function to call to get the floor price of a NFT from opensea api using Chainlink
+   * @param _collectionAddress address of the collection
+   * @param _callback callback for the function, it should be of the form: function(uint256 floorPrice)
+   */
   function getFloorPrice(address _collectionAddress, Callback memory _callback) public returns (bytes20) {
     callId++;
     bytes16 guid = bytes16(keccak256(abi.encodePacked(callId)));
@@ -158,7 +163,7 @@ contract PriceOracleNFT is ChainlinkClient {
    * This will call an api via chainlink to get the floor price of a collection
    * @param _collectionSlug the slug for the collection in openSea
    */
-  function requestOpenSeaFloorPrice(address _collectionAddress, string memory _collectionSlug) public returns (bytes32 requestId) {
+  function requestOpenSeaFloorPrice(address _collectionAddress, string memory _collectionSlug) internal returns (bytes32 requestId) {
     testStatus = "check recent";
 
     // check if there is already a result that's recent
@@ -227,32 +232,36 @@ contract PriceOracleNFT is ChainlinkClient {
   }
 
   /**
-   * Concatenate the URL to perform the GET request on
+   * Concatenate the URL for getting status such as floor price
    */
-  function getStatsUrl(string memory slug) private pure returns (string memory) {
+  function getStatsUrl(string memory slug) public pure returns (string memory) {
     return string(abi.encodePacked("https://api.opensea.io/api/v1/collection/", slug, "/stats"));
   }
 
   /**
-   * Concatenate the URL to perform the GET request on
+   * Concatenate the URL for getting slug
    */
-  function getContractUrl(string memory contractAddress) private pure returns (string memory) {
+  function getContractUrl(string memory contractAddress) public pure returns (string memory) {
     return string(abi.encodePacked("https://api.opensea.io/api/v1/asset_contract/", contractAddress));
   }
+
+  // /////////
+  // HELPERS
+  // /////////
 
   function toString(address account) public pure returns (string memory) {
     return toString(abi.encodePacked(account));
   }
 
-  function toString(uint256 value) public pure returns (string memory) {
+  function toString(uint256 value) internal pure returns (string memory) {
     return toString(abi.encodePacked(value));
   }
 
-  function toString(bytes32 value) public pure returns (string memory) {
+  function toString(bytes32 value) internal pure returns (string memory) {
     return toString(abi.encodePacked(value));
   }
 
-  function toString(bytes memory data) public pure returns (string memory) {
+  function toString(bytes memory data) internal pure returns (string memory) {
     bytes memory alphabet = "0123456789abcdef";
 
     bytes memory str = new bytes(2 + data.length * 2);
@@ -265,7 +274,7 @@ contract PriceOracleNFT is ChainlinkClient {
     return string(str);
   }
 
-  // maybe needed for polygon? not for mumbai and job id  https://github.com/smartcontractkit/documentation/issues/513
+  // maybe needed for polygon job id? not for mumbai and job id  https://github.com/smartcontractkit/documentation/issues/513
 
   //   function stringToBytes32(string memory source) public pure returns (bytes32 result) {
   //     bytes memory tempEmptyStringTest = bytes(source);
