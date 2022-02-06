@@ -59,6 +59,10 @@
          "packages/vite-app-ts",
          "packages/services/*",
          "packages/subgraph"
+      ],
+      "nohoist": [
+         "**/@graphprotocol/graph-ts",
+         "**/@graphprotocol/graph-ts/**"
       ]
    },
    "packageManager": "yarn@3.1.0",

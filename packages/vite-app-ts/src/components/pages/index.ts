@@ -5,3 +5,4 @@ import { lazier } from 'eth-hooks/helpers';
 
 export const Lend = lazier(() => import('./lend/Lend'), 'Lend');
 export const Borrow = lazier(() => import('./borrow/Borrow'), 'Borrow');
+export const Check = lazier(() => import('./check/check'), 'Check');

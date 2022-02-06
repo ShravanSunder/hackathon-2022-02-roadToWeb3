@@ -10,7 +10,7 @@ import { asEthersAdaptor } from 'eth-hooks/functions';
 
 import { MainPageMenu, MainPageContracts, MainPageFooter, MainPageHeader } from './components/main';
 import { useScaffoldHooksExamples as useScaffoldHooksExamples } from './components/main/hooks/useScaffoldHooksExamples';
-import { Borrow, Lend } from './components/pages';
+import { Borrow, Lend, Check } from './components/pages';
 
 import { useBurnerFallback } from '~~/components/main/hooks/useBurnerFallback';
 import { useScaffoldProviders as useScaffoldAppProviders } from '~~/components/main/hooks/useScaffoldAppProviders';
@@ -108,6 +108,9 @@ export const Main: FC = () => {
         <Switch>
           <Route exact path="/">
             <Lend></Lend>
+          </Route>
+          <Route exact path="/check">
+            <Check></Check>
           </Route>
           <Route exact path="/lend">
             <Lend></Lend>
