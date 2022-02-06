@@ -26,9 +26,16 @@ oracle: "0x0a31078cd57d23bf9e8e8f1ba78356ca2090569e",
 jobId: "12b86114fa9e46bab3ca436f88e1a912",
 */
 
-/**
- * Chainlink Oracle: Call opensea api and get floor price fo a collection
- */
+/*******
+ * Author: Shravan Sunder
+ * Date: 2022-02
+ * Description: This contract uses chainlink to get the floor price of a NFT from opensea api using Chainlink
+ * Notes:
+  - This is callback based, you need to call getFloorPrice
+  - it will make two api calls. (1) get the slug, (2) to get price
+  - it will try to save on link by saving address:slug map 
+  - it may reuse address:price map based on the timestamp (1 day, see updateFrequency)
+ ****** */
 contract PriceOracleNFT is ChainlinkClient {
   using Chainlink for Chainlink.Request;
   string public testStatus = "init";
@@ -37,39 +44,42 @@ contract PriceOracleNFT is ChainlinkClient {
   uint256 updateFrequency = 60 * 60 * 24;
 
   struct Callback {
-    address _callbackAddress;
-    bytes4 _callbackFunctionSignature;
+    address callbackAddress;
+    bytes4 callbackFunctionSignature;
   }
 
   // the collection data used by state
   struct CollectionPrice {
-    string collectionSlug;
     uint256 floorPrice;
     uint256 timestamp;
     bytes32 requestId;
   }
 
-  // structure to keep track of current requests
+  // structure to keep track of floor price chainlink requests
   struct FloorPriceRequests {
     uint256 timestamp;
-    string collectionSlug;
+    address collectionAddress;
   }
 
-  struct CollectionSlugRequest {
-    string slug;
-    bytes32 requestId;
+  // structure to keep track of current calls
+  struct CallInfo {
+    bytes16 guid;
+    bytes32 slugRequestId;
+    bytes32 floorPriceRequestId;
+    Callback callback;
   }
 
   // state variables
   /* map of floor price by collection name */
-  mapping(string => CollectionPrice) public floorPriceMap;
+  mapping(address => CollectionPrice) public floorPriceMap;
   /* map of address to collection name */
-  mapping(address => CollectionSlugRequest) public addressToCollectionSlugMap;
+  mapping(address => string) public addressToCollectionSlugMap;
+  mapping(address => CallInfo) public addressToCallInfoMap;
   mapping(bytes32 => address) public requestToAddressMap;
   /* map of requests by collection name */
-  mapping(string => bytes32) public currentRequestsByName;
+  //mapping(string => bytes32) public floorPriceRequestsByName;
   /* map of requests by requestId */
-  mapping(bytes32 => FloorPriceRequests) public currentRequestsById;
+  mapping(bytes32 => FloorPriceRequests) public floorPriceRequestsById;
 
   uint256 private callId = 0;
   // oracle data
@@ -78,8 +88,8 @@ contract PriceOracleNFT is ChainlinkClient {
   uint256 private fee;
 
   // events
-  event OpenSeaFloorPriceRequested(string collectionSlug, bytes32 requestId, string url, uint256 timestamp);
-  event OpenSeaFloorPriceUpdated(string collectionSlug, bytes32 requestId, uint256 floorPrice, uint256 timestamp);
+  event OpenSeaFloorPriceRequested(address collectionAddress, string collectionSlug, bytes32 requestId, string url, uint256 timestamp);
+  event OpenSeaFloorPriceUpdated(address collectionAddress, bytes32 requestId, uint256 floorPrice, uint256 timestamp);
   event OpeaFloorSlugRequested(address collectionAddress, bytes32 requestId);
   event OpeaFloorSlugUpdated(address collectionAddress, string collectionSlug, bytes32 requestId);
 
@@ -92,8 +102,19 @@ contract PriceOracleNFT is ChainlinkClient {
 
   function getFloorPrice(address _collectionAddress, Callback memory _callback) public returns (bytes20) {
     callId++;
-    bytes20 guid = bytes20(keccak256(abi.encodePacked(callId)));
-    requestOpenSeaCollectionSlug(_collectionAddress);
+    bytes16 guid = bytes16(keccak256(abi.encodePacked(callId)));
+
+    if (bytes(addressToCollectionSlugMap[_collectionAddress]).length == 0) {
+      // we don't have slug for this collection contract
+      addressToCallInfoMap[_collectionAddress] = CallInfo(guid, 0, 0, _callback);
+      bytes32 result = requestOpenSeaCollectionSlug(_collectionAddress);
+      addressToCallInfoMap[_collectionAddress].slugRequestId = result;
+    } else {
+      // we have slug for this collection contract
+      addressToCallInfoMap[_collectionAddress] = CallInfo(guid, 0, 0, _callback);
+      bytes32 result = requestOpenSeaFloorPrice(_collectionAddress, addressToCollectionSlugMap[_collectionAddress]);
+      addressToCallInfoMap[_collectionAddress].floorPriceRequestId = result;
+    }
 
     return guid;
   }
@@ -102,12 +123,7 @@ contract PriceOracleNFT is ChainlinkClient {
    * This will call an api via chainlink to get the floor price of a collection
    * @param _collectionAddress address of contract
    */
-  function requestOpenSeaCollectionSlug(address _collectionAddress) public returns (bytes32 requestId) {
-    // check if there is already a result that's recent
-    if (bytes(addressToCollectionSlugMap[_collectionAddress].slug).length == 0) {
-      return addressToCollectionSlugMap[_collectionAddress].requestId;
-    }
-
+  function requestOpenSeaCollectionSlug(address _collectionAddress) internal returns (bytes32 requestId) {
     // create a new request
     Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillCollectionSlug.selector);
 
@@ -119,8 +135,6 @@ contract PriceOracleNFT is ChainlinkClient {
     // send the request
     bytes32 result = sendChainlinkRequestTo(oracle, request, fee);
 
-    requestToAddressMap[result] = _collectionAddress;
-
     // emit event and save id
     emit OpeaFloorSlugRequested(_collectionAddress, result);
     return result;
@@ -131,37 +145,41 @@ contract PriceOracleNFT is ChainlinkClient {
    */
   function fulfillCollectionSlug(bytes32 _requestId, string memory _slug) public recordChainlinkFulfillment(_requestId) {
     string memory collectionSlug = _slug;
-
     emit OpeaFloorSlugUpdated(requestToAddressMap[_requestId], collectionSlug, _requestId);
+    addressToCollectionSlugMap[requestToAddressMap[_requestId]] = _slug;
 
-    addressToCollectionSlugMap[requestToAddressMap[_requestId]].slug = _slug;
+    // call the next step
+    address collectionAddress = requestToAddressMap[_requestId];
+    bytes32 result = requestOpenSeaFloorPrice(collectionAddress, _slug);
+    addressToCallInfoMap[collectionAddress].floorPriceRequestId = result;
   }
 
   /**
    * This will call an api via chainlink to get the floor price of a collection
    * @param _collectionSlug the slug for the collection in openSea
    */
-  function requestOpenSeaFloorPrice(string memory _collectionSlug) public returns (bytes32 requestId) {
+  function requestOpenSeaFloorPrice(address _collectionAddress, string memory _collectionSlug) public returns (bytes32 requestId) {
     testStatus = "check recent";
 
     // check if there is already a result that's recent
-    if (floorPriceMap[_collectionSlug].timestamp != 0) {
-      if (block.timestamp - floorPriceMap[_collectionSlug].timestamp < updateFrequency) {
-        return floorPriceMap[_collectionSlug].requestId;
+    if (floorPriceMap[_collectionAddress].timestamp != 0) {
+      if (block.timestamp - floorPriceMap[_collectionAddress].timestamp < updateFrequency) {
+        return floorPriceMap[_collectionAddress].requestId;
       }
     }
 
     testStatus = "check requests";
 
+    bytes32 floorPriceRequestId = addressToCallInfoMap[_collectionAddress].floorPriceRequestId;
+
     // check if a request is in progress that's valid
-    if (currentRequestsByName[_collectionSlug] != 0 && currentRequestsById[currentRequestsByName[_collectionSlug]].timestamp != 0) {
-      if (block.timestamp - currentRequestsById[currentRequestsByName[_collectionSlug]].timestamp < updateFrequency) {
-        return currentRequestsByName[_collectionSlug];
+    if (floorPriceRequestId != 0 && floorPriceRequestsById[floorPriceRequestId].timestamp != 0) {
+      if (block.timestamp - floorPriceRequestsById[floorPriceRequestId].timestamp < updateFrequency) {
+        return floorPriceRequestId;
       }
 
       // if there any current request and its too old, delete it and refetch
-      delete currentRequestsById[currentRequestsByName[_collectionSlug]];
-      delete currentRequestsByName[_collectionSlug];
+      delete floorPriceRequestsById[floorPriceRequestId];
     }
 
     testStatus = "create request";
@@ -183,11 +201,10 @@ contract PriceOracleNFT is ChainlinkClient {
     bytes32 result = sendChainlinkRequestTo(oracle, request, fee);
 
     // save the request data
-    currentRequestsById[result] = FloorPriceRequests(block.timestamp, _collectionSlug);
-    currentRequestsByName[_collectionSlug] = result;
+    floorPriceRequestsById[result] = FloorPriceRequests(block.timestamp, _collectionAddress);
 
     // emit event and save id
-    emit OpenSeaFloorPriceRequested(_collectionSlug, result, url, block.timestamp);
+    emit OpenSeaFloorPriceRequested(_collectionAddress, _collectionSlug, result, url, block.timestamp);
     return result;
   }
 
@@ -195,17 +212,18 @@ contract PriceOracleNFT is ChainlinkClient {
    *  Callback function to retrieve the response from the Chainlink request.
    */
   function fulfillFloorPrice(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
-    testStatus = "saving";
+    address collectionAddress = floorPriceRequestsById[_requestId].collectionAddress;
+    floorPriceMap[collectionAddress] = CollectionPrice(_price, block.timestamp, _requestId);
 
-    string memory collectionSlug = currentRequestsById[_requestId].collectionSlug;
-    floorPriceMap[collectionSlug] = CollectionPrice(collectionSlug, _price, block.timestamp, _requestId);
+    emit OpenSeaFloorPriceUpdated(collectionAddress, _requestId, _price, block.timestamp);
 
-    emit OpenSeaFloorPriceUpdated(collectionSlug, _requestId, _price, block.timestamp);
+    // delete floor price request that is completed
+    delete floorPriceRequestsById[_requestId];
 
-    // delete any current requests
-    delete currentRequestsByName[collectionSlug];
-    delete currentRequestsById[_requestId];
-    testStatus = "done";
+    // invoke callback
+    Callback memory callback = addressToCallInfoMap[collectionAddress].callback;
+    (bool success, ) = callback.callbackAddress.call(abi.encodeWithSelector(callback.callbackFunctionSignature, _price));
+    delete addressToCallInfoMap[collectionAddress];
   }
 
   /**
@@ -248,6 +266,7 @@ contract PriceOracleNFT is ChainlinkClient {
   }
 
   // maybe needed for polygon? not for mumbai and job id  https://github.com/smartcontractkit/documentation/issues/513
+
   //   function stringToBytes32(string memory source) public pure returns (bytes32 result) {
   //     bytes memory tempEmptyStringTest = bytes(source);
   //     if (tempEmptyStringTest.length == 0) {
