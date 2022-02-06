@@ -769,10 +769,10 @@ contract DeNFT is ERC20, IERC721Receiver {
   */
 
   function floor(address nftCollateralContract) public view returns (uint256) {
-    if (nftCollateralContract.totalSupply() == 0) {
+    if (IERC721Enumerable.nftCollateralContract.totalSupply() == 0) {
       return nftCollateralContract.balance;
     }
-    return nftCollateralContract.balance / nftCollateralContract.totalSupply();
+    return nftCollateralContract.balance / IERC721Enumerable.nftCollateralContract.totalSupply();
   }
 
   /**
