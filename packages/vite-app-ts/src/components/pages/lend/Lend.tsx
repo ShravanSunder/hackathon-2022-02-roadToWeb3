@@ -10,6 +10,7 @@ import { useAppContracts } from '~~/config/contractContext';
 export const Lend: FC = (props) => {
   const ethersContext = useEthersContext();
   const deNFT = useAppContracts('DeNFT', ethersContext.chainId);
+  const token = useAppContracts('MockERC20', ethersContext.chainId);
 
   const ethComponentsSettings = useContext(EthComponentsSettingsContext);
   const [gasPrice] = useGasPrice(ethersContext.chainId, 'fast');
@@ -64,16 +65,9 @@ export const Lend: FC = (props) => {
         <button
           className="btn btn-primary"
           onClick={async (): Promise<void> => {
-            console.log('click');
-            const result = await tx?.(
-              deNFT?.depositLoanCapital(
-                utils.parseEther(amount.toString()),
-                duration.toString(),
-                collateralRatio.toString()
-              )
-            );
-
-            console.log(result);
+            const principal = utils.parseEther(amount.toString());
+            await tx?.(token?.approve(deNFT?.address ?? '', principal));
+            await tx?.(deNFT?.depositLoanCapital(principal, duration.toString(), collateralRatio.toString()));
           }}>
           Deposit
         </button>

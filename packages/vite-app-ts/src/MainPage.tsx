@@ -1,9 +1,9 @@
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useContext, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 
 import '~~/styles/main-page.css';
 
-import { useBalance, useEthersAdaptorFromProviderOrSigners } from 'eth-hooks';
+import { useBalance, useContractReader, useEthersAdaptorFromProviderOrSigners, useGasPrice } from 'eth-hooks';
 import { useEthersContext } from 'eth-hooks/context';
 import { useDexEthPrice } from 'eth-hooks/dapps';
 import { asEthersAdaptor } from 'eth-hooks/functions';
@@ -18,6 +18,8 @@ import { BURNER_FALLBACK_ENABLED, MAINNET_PROVIDER } from '~~/config/appConfig';
 import { useAppContracts, useConnectAppContracts, useLoadAppContracts } from '~~/config/contractContext';
 import { NETWORKS } from '~~/models/constants/networks';
 
+import { EthComponentsSettingsContext } from 'eth-components/models';
+import { transactor } from 'eth-components/functions';
 /**
  * ⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️⛳️
  * See config/appConfig.ts for configuration, such as TARGET_NETWORK
@@ -93,6 +95,13 @@ export const Main: FC = () => {
   // 💰 this hook will get your balance
   const [yourCurrentBalance] = useBalance(ethersContext.account);
 
+  const nft = useAppContracts('MockNFTContract', ethersContext.chainId);
+  const [mintPrice] = useContractReader(nft, nft?.price);
+
+  const ethComponentsSettings = useContext(EthComponentsSettingsContext);
+  const [gasPrice] = useGasPrice(ethersContext.chainId, 'fast');
+  const tx = transactor(ethComponentsSettings, ethersContext?.signer, gasPrice);
+
   const [route, setRoute] = useState<string>('');
   useEffect(() => {
     setRoute(window.location.pathname);
@@ -107,7 +116,16 @@ export const Main: FC = () => {
         <MainPageMenu route={route} setRoute={setRoute} />
         <Switch>
           <Route exact path="/">
-            <Lend></Lend>
+            <button
+              className="btn btn-primary"
+              onClick={async (): Promise<void> => {
+                const result = await tx?.(
+                  nft?.mintItem(ethersContext.account ?? '', { value: mintPrice?.toString() ?? '' })
+                );
+                console.log(result);
+              }}>
+              Mint
+            </button>
           </Route>
           <Route exact path="/check">
             <Check></Check>
