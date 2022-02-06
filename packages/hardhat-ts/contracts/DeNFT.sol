@@ -956,7 +956,7 @@ contract DeNFT is ERC20, IERC721Receiver {
   }
 
   /**
-   Fetches NFT Floor Price
+   Fetches NFT Floor Price; this is to be replaced by a Chainlink or Covalent NFT floor price oracle
   */
 
   function floor(address nftCollateralContract) public view returns (uint256) {
@@ -1011,7 +1011,7 @@ contract DeNFT is ERC20, IERC721Receiver {
     }
     Loan storage loan = loanIdToLoan[_loanID];
     // *** NEEDS TO BE FETCHED FROM THE ORACLE ***
-    uint256 nftPrice = 30 ether;
+    uint256 nftPrice = _nftCollateralContract.floor();
     // calculate the borrow amount
     uint256 maxBorrowAmount = (nftPrice * loan.collateralRatio) / 100;
     if (_borrowAmount < maxBorrowAmount) {
