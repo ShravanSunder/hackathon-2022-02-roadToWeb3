@@ -36,42 +36,105 @@ contract PriceOracleNFT is ChainlinkClient {
   // 1 day
   uint256 updateFrequency = 60 * 60 * 24;
 
+  struct Callback {
+    address _callbackAddress;
+    bytes4 _callbackFunctionSignature;
+  }
+
   // the collection data used by state
   struct CollectionPrice {
-    string collectionName;
+    string collectionSlug;
     uint256 floorPrice;
     uint256 timestamp;
     bytes32 requestId;
   }
 
   // structure to keep track of current requests
-  struct CollectionRequests {
+  struct FloorPriceRequests {
     uint256 timestamp;
-    string collectionName;
+    string collectionSlug;
+  }
+
+  struct CollectionSlugRequest {
+    string slug;
+    bytes32 requestId;
   }
 
   // state variables
   /* map of floor price by collection name */
-  mapping(string => CollectionPrice) public floorPriceMapping;
+  mapping(string => CollectionPrice) public floorPriceMap;
+  /* map of address to collection name */
+  mapping(address => CollectionSlugRequest) public addressToCollectionSlugMap;
+  mapping(bytes32 => address) public requestToAddressMap;
   /* map of requests by collection name */
   mapping(string => bytes32) public currentRequestsByName;
   /* map of requests by requestId */
-  mapping(bytes32 => CollectionRequests) public currentRequestsById;
+  mapping(bytes32 => FloorPriceRequests) public currentRequestsById;
 
+  uint256 private callId = 0;
   // oracle data
   address private oracle;
   bytes32 private jobId;
   uint256 private fee;
 
   // events
-  event OpenSeaFloorPriceRequested(string collectionName, bytes32 requestId, string url, uint256 timestamp);
-  event OpenSeaFloorPriceUpdated(string collectionName, bytes32 requestId, uint256 floorPrice, uint256 timestamp);
+  event OpenSeaFloorPriceRequested(string collectionSlug, bytes32 requestId, string url, uint256 timestamp);
+  event OpenSeaFloorPriceUpdated(string collectionSlug, bytes32 requestId, uint256 floorPrice, uint256 timestamp);
+  event OpeaFloorSlugRequested(address collectionAddress, bytes32 requestId);
+  event OpeaFloorSlugUpdated(address collectionAddress, string collectionSlug, bytes32 requestId);
 
   constructor() {
     setChainlinkToken(0x326C977E6efc84E512bB9C30f76E30c160eD06FB);
     oracle = 0x58BBDbfb6fca3129b91f0DBE372098123B38B5e9;
     jobId = "da20aae0e4c843f6949e5cb3f7cfe8c4";
     fee = 0.01 * 10**18;
+  }
+
+  function getFloorPrice(address _collectionAddress, Callback memory _callback) public returns (bytes20) {
+    callId++;
+    bytes20 guid = bytes20(keccak256(abi.encodePacked(callId)));
+    requestOpenSeaCollectionSlug(_collectionAddress);
+
+    return guid;
+  }
+
+  /**
+   * This will call an api via chainlink to get the floor price of a collection
+   * @param _collectionAddress address of contract
+   */
+  function requestOpenSeaCollectionSlug(address _collectionAddress) public returns (bytes32 requestId) {
+    // check if there is already a result that's recent
+    if (bytes(addressToCollectionSlugMap[_collectionAddress].slug).length == 0) {
+      return addressToCollectionSlugMap[_collectionAddress].requestId;
+    }
+
+    // create a new request
+    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillCollectionSlug.selector);
+
+    // Set the URL to perform the GET request on
+    string memory url = getContractUrl(toString(_collectionAddress));
+    request.add("get", url);
+    request.add("path", "collection.slug");
+
+    // send the request
+    bytes32 result = sendChainlinkRequestTo(oracle, request, fee);
+
+    requestToAddressMap[result] = _collectionAddress;
+
+    // emit event and save id
+    emit OpeaFloorSlugRequested(_collectionAddress, result);
+    return result;
+  }
+
+  /**
+   *  Callback function to retrieve the response from the Chainlink request.
+   */
+  function fulfillCollectionSlug(bytes32 _requestId, string memory _slug) public recordChainlinkFulfillment(_requestId) {
+    string memory collectionSlug = _slug;
+
+    emit OpeaFloorSlugUpdated(requestToAddressMap[_requestId], collectionSlug, _requestId);
+
+    addressToCollectionSlugMap[requestToAddressMap[_requestId]].slug = _slug;
   }
 
   /**
@@ -82,9 +145,9 @@ contract PriceOracleNFT is ChainlinkClient {
     testStatus = "check recent";
 
     // check if there is already a result that's recent
-    if (floorPriceMapping[_collectionSlug].timestamp != 0) {
-      if (block.timestamp - floorPriceMapping[_collectionSlug].timestamp < updateFrequency) {
-        return floorPriceMapping[_collectionSlug].requestId;
+    if (floorPriceMap[_collectionSlug].timestamp != 0) {
+      if (block.timestamp - floorPriceMap[_collectionSlug].timestamp < updateFrequency) {
+        return floorPriceMap[_collectionSlug].requestId;
       }
     }
 
@@ -104,10 +167,10 @@ contract PriceOracleNFT is ChainlinkClient {
     testStatus = "create request";
 
     // create a new request
-    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
+    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfillFloorPrice.selector);
 
     // Set the URL to perform the GET request on
-    string memory url = conactUrl(_collectionSlug);
+    string memory url = getStatsUrl(_collectionSlug);
     request.add("get", url);
     request.add("path", "stats.floor_price");
 
@@ -120,7 +183,7 @@ contract PriceOracleNFT is ChainlinkClient {
     bytes32 result = sendChainlinkRequestTo(oracle, request, fee);
 
     // save the request data
-    currentRequestsById[result] = CollectionRequests(block.timestamp, _collectionSlug);
+    currentRequestsById[result] = FloorPriceRequests(block.timestamp, _collectionSlug);
     currentRequestsByName[_collectionSlug] = result;
 
     // emit event and save id
@@ -131,16 +194,16 @@ contract PriceOracleNFT is ChainlinkClient {
   /**
    *  Callback function to retrieve the response from the Chainlink request.
    */
-  function fulfill(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
+  function fulfillFloorPrice(bytes32 _requestId, uint256 _price) public recordChainlinkFulfillment(_requestId) {
     testStatus = "saving";
 
-    string memory collectionName = currentRequestsById[_requestId].collectionName;
-    floorPriceMapping[collectionName] = CollectionPrice(collectionName, _price, block.timestamp, _requestId);
+    string memory collectionSlug = currentRequestsById[_requestId].collectionSlug;
+    floorPriceMap[collectionSlug] = CollectionPrice(collectionSlug, _price, block.timestamp, _requestId);
 
-    emit OpenSeaFloorPriceUpdated(collectionName, _requestId, _price, block.timestamp);
+    emit OpenSeaFloorPriceUpdated(collectionSlug, _requestId, _price, block.timestamp);
 
     // delete any current requests
-    delete currentRequestsByName[collectionName];
+    delete currentRequestsByName[collectionSlug];
     delete currentRequestsById[_requestId];
     testStatus = "done";
   }
@@ -148,8 +211,40 @@ contract PriceOracleNFT is ChainlinkClient {
   /**
    * Concatenate the URL to perform the GET request on
    */
-  function conactUrl(string memory slug) private pure returns (string memory) {
+  function getStatsUrl(string memory slug) private pure returns (string memory) {
     return string(abi.encodePacked("https://api.opensea.io/api/v1/collection/", slug, "/stats"));
+  }
+
+  /**
+   * Concatenate the URL to perform the GET request on
+   */
+  function getContractUrl(string memory contractAddress) private pure returns (string memory) {
+    return string(abi.encodePacked("https://api.opensea.io/api/v1/asset_contract/", contractAddress));
+  }
+
+  function toString(address account) public pure returns (string memory) {
+    return toString(abi.encodePacked(account));
+  }
+
+  function toString(uint256 value) public pure returns (string memory) {
+    return toString(abi.encodePacked(value));
+  }
+
+  function toString(bytes32 value) public pure returns (string memory) {
+    return toString(abi.encodePacked(value));
+  }
+
+  function toString(bytes memory data) public pure returns (string memory) {
+    bytes memory alphabet = "0123456789abcdef";
+
+    bytes memory str = new bytes(2 + data.length * 2);
+    str[0] = "0";
+    str[1] = "x";
+    for (uint256 i = 0; i < data.length; i++) {
+      str[2 + i * 2] = alphabet[uint256(uint8(data[i] >> 4))];
+      str[3 + i * 2] = alphabet[uint256(uint8(data[i] & 0x0f))];
+    }
+    return string(str);
   }
 
   // maybe needed for polygon? not for mumbai and job id  https://github.com/smartcontractkit/documentation/issues/513
