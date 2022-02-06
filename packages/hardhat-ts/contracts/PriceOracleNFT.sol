@@ -63,7 +63,6 @@ contract PriceOracleNFT is ChainlinkClient {
 
   // structure to keep track of current calls
   struct CallInfo {
-    bytes16 guid;
     bytes32 slugRequestId;
     bytes32 floorPriceRequestId;
     Callback callback;
