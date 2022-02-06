@@ -7,12 +7,12 @@ import { useAppContracts } from '~~/config/contractContext';
 
 export const Check: FC = (props) => {
   const ethersContext = useEthersContext();
-  const veNFT = useAppContracts('veNFTCollateral', ethersContext.chainId);
+  const deNFT = useAppContracts('DeNFT', ethersContext.chainId);
 
-  console.log('veNFT', veNFT);
+  console.log('veNFT', deNFT);
 
   const increaseAllowance = async (): Promise<void> => {
-    await veNFT?.increaseAllowance('0xc035ea520cf981368ac9d9f585b150cecf9e2dfb', parseEther('1'));
+    await deNFT?.increaseAllowance('0xc035ea520cf981368ac9d9f585b150cecf9e2dfb', parseEther('1'));
   };
 
   return (

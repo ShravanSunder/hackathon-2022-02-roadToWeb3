@@ -14,14 +14,15 @@ export interface IMainPageContractsProps {
  * 🎛 this scaffolding is full of commonly used components
     this <GenericContract/> component will automatically parse your ABI
     and give you a form to interact with it locally
- * @param props 
- * @returns 
+ * @param props
+ * @returns
  */
 export const MainPageContracts: FC<IMainPageContractsProps> = (props) => {
   const ethersContext = useEthersContext();
   const mainnetDai = useAppContracts('DAI', NETWORKS.mainnet.chainId);
-  const yourContract = useAppContracts('YourContract', ethersContext.chainId);
+  // const yourContract = useAppContracts('YourContract', ethersContext.chainId);
   const priceContract = useAppContracts('PriceOracleNFT', ethersContext.chainId);
+  const deNft = useAppContracts('DeNFT', ethersContext.chainId);
 
   if (ethersContext.account == null) {
     return <></>;
@@ -29,10 +30,10 @@ export const MainPageContracts: FC<IMainPageContractsProps> = (props) => {
 
   return (
     <>
-      <Route path="/your-contract">
+      <Route path="/denft">
         <GenericContract
-          contractName="YourContract"
-          contract={yourContract}
+          contractName="DeNFT"
+          contract={deNft}
           mainnetAdaptor={props.scaffoldAppProviders.mainnetAdaptor}
           blockExplorer={props.scaffoldAppProviders.targetNetwork.blockExplorer}
         />

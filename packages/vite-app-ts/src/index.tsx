@@ -23,11 +23,16 @@ const run = async (): Promise<void> => {
   const App = lazy(() => import('./App'));
 
   ReactDOM.render(
-    <StrictMode>
-      <Suspense fallback={<div />}>
-        <App />
-      </Suspense>
-    </StrictMode>,
+    <MoralisProvider
+      appId="wZFcpqX8tY96qQXEN7kBM3t349ycH0ITFMPUuWMi"
+      serverUrl="https://mqae4ktqaurd.usemoralis.com:2053/server"
+      initializeOnMount={true}>
+      <StrictMode>
+        <Suspense fallback={<div />}>
+          <App />
+        </Suspense>
+      </StrictMode>
+    </MoralisProvider>,
     document.getElementById('root')
   );
 };

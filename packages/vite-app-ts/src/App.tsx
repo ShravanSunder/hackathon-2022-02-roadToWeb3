@@ -3,7 +3,6 @@ import { EthersAppContext } from 'eth-hooks/context';
 import { lazier } from 'eth-hooks/helpers';
 import React, { FC, Suspense } from 'react';
 import { ThemeSwitcherProvider } from 'react-css-theme-switcher';
-import { MoralisProvider } from 'react-moralis';
 
 import { ErrorBoundary, ErrorFallback } from '~~/components/common/ErrorFallback';
 import { ContractsAppContext } from '~~/config/contractContext';
@@ -63,13 +62,9 @@ const App: FC = () => {
           <EthersAppContext>
             <ErrorBoundary FallbackComponent={ErrorFallback}>
               <ThemeSwitcherProvider themeMap={themes} defaultTheme={savedTheme || 'light'}>
-                <MoralisProvider
-                  appId="wZFcpqX8tY96qQXEN7kBM3t349ycH0ITFMPUuWMi"
-                  serverUrl="https://mqae4ktqaurd.usemoralis.com:2053/server">
-                  <Suspense fallback={<div />}>
-                    <MainPage />
-                  </Suspense>
-                </MoralisProvider>
+                <Suspense fallback={<div />}>
+                  <MainPage />
+                </Suspense>
               </ThemeSwitcherProvider>
             </ErrorBoundary>
           </EthersAppContext>

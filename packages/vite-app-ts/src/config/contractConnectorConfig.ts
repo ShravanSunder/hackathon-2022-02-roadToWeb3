@@ -24,11 +24,7 @@ export const contractConnectorConfig = () => {
   try {
     const result = {
       // 🙋🏽‍♂️ Add your hadrdhat contracts here
-      veNFTCollateral: createConnectorForHardhatContract(
-        'veNFTCollateral',
-        hardhatContracts.VeNFTCollateral__factory,
-        hardhatContractsJson
-      ),
+      DeNFT: createConnectorForHardhatContract('DeNFT', hardhatContracts.DeNFT__factory, hardhatContractsJson),
       PriceOracleNFT: createConnectorForHardhatContract(
         'PriceOracleNFT',
         hardhatContracts.PriceOracleNFT__factory,

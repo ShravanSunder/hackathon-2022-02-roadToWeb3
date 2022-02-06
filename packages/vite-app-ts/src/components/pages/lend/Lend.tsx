@@ -4,12 +4,9 @@ import { useGasPrice } from 'eth-hooks';
 import { useEthersContext } from 'eth-hooks/context';
 import { FC, useContext, useState } from 'react';
 
-import { useAppContracts } from '~~/config/contractContext';
-import { NETWORKS } from '~~/models/constants/networks';
-
 export const Lend: FC = (props) => {
   const ethersContext = useEthersContext();
-  const veNFT = useAppContracts('veNFTCollateral', NETWORKS.mumbai.chainId);
+  //   const veNFT = useAppContracts('veNFTCollateral', NETWORKS.mumbai.chainId);
 
   const ethComponentsSettings = useContext(EthComponentsSettingsContext);
   const [gasPrice] = useGasPrice(ethersContext.chainId, 'fast');

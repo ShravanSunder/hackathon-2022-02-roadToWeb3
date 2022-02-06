@@ -41,13 +41,13 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
         Borrow
       </Link>
     </Menu.Item>
-    <Menu.Item key="/your-contract">
+    <Menu.Item key="/denft">
       <Link
         onClick={(): void => {
-          props.setRoute('/your-contract');
+          props.setRoute('/denft');
         }}
-        to="/your-contract">
-        Debug: Your Contract
+        to="/denft">
+        Debug: DeNFT
       </Link>
     </Menu.Item>
     <Menu.Item key="/price-oracle-nft">
