@@ -23,13 +23,13 @@ export const Lend: FC = (props) => {
   const [amount, setAmount] = useState(0);
   const [duration, setDuration] = useState(0);
   const [collateralRatio, setCollateralRatio] = useState(0);
+  const [numberOfLoans] = useContractReader(deNFT, deNFT?.totalNumLoans, []);
 
   const [myLoans, setMyLoans] = useState<TLoan[]>([]);
   useEffect(() => {
     const getLoans = async (): Promise<void> => {
       const newLoans: TLoan[] = [];
-      if (!deNFT) return;
-      const numberOfLoans = await deNFT.totalNumLoans();
+      if (!deNFT || !numberOfLoans) return;
 
       for (let i = 0; i < numberOfLoans.toNumber(); i++) {
         const loanStatus = await deNFT.loanStatus(0);
@@ -114,13 +114,15 @@ export const Lend: FC = (props) => {
                 {loan.loanStartTime.isZero() ? new Date(loan.loanStartTime.toString()).toDateString() : 'N/A'}
               </div>
               <div>Amount lent: {utils.formatEther(loan.borrowedAmount as BigNumberish)}</div>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={async (): Promise<void> => {
-                  await tx?.(deNFT?.claimDeposit(loan.loanId as BigNumberish));
-                }}>
-                Claim
-              </button>
+              {!loan.loanStartTime.isZero() && (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={async (): Promise<void> => {
+                    await tx?.(deNFT?.claimDeposit(loan.loanId as BigNumberish));
+                  }}>
+                  Claim
+                </button>
+              )}
             </div>
           ))}
         </div>
