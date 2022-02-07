@@ -6,6 +6,9 @@
 
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/IERC20.sol)
 
+import "./Address.sol";
+import "./Strings.sol";
+
 pragma solidity ^0.8.0;
 
 /**
@@ -1382,7 +1385,7 @@ error LOAN_INACTIVE();
 /**
  @notice
   DeNFT CONTRACT where lender lock in their erc20 tokens and get rewards based on their duration of locking in and grant loans
-  Borrowers then can borrow funds at 0% interest but they lock in their exclusive NFT's 
+  Borrowers then can borrow funds at 0% interest but they lock in their exclusive NFT's
   If borrowers fail to repay in time the lender get's the locked in NFT
 */
 contract DeNFT is ERC20, IERC721Receiver {
@@ -1446,17 +1449,17 @@ contract DeNFT is ERC20, IERC721Receiver {
   */
 
   function floor(address nftCollateralContract) public view returns (uint256) {
-    if (IERC721Enumerable.nftCollateralContract.totalSupply() == 0) {
-      return nftCollateralContract.balance;
-    }
-    return nftCollateralContract.balance / IERC721Enumerable.nftCollateralContract.totalSupply();
+    // if (IERC721Enumerable.nftCollateralContract.totalSupply() == 0) {
+    //   return nftCollateralContract.balance;
+    // }
+    // return nftCollateralContract.balance / IERC721Enumerable.nftCollateralContract.totalSupply();
   }
 
   /**
     @notice
     Needs to be called by the lender to ceate a loan and deposit capital
     // _duration is in seconds.
-    // _collateralRatio is b/w 0-100 preferably around 80 
+    // _collateralRatio is b/w 0-100 preferably around 80
   */
   function depositLoanCapital(
     uint256 _amount,
@@ -1497,7 +1500,7 @@ contract DeNFT is ERC20, IERC721Receiver {
     }
     Loan storage loan = loanIdToLoan[_loanID];
     // *** NEEDS TO BE FETCHED FROM THE ORACLE ***
-    uint256 nftPrice = _nftCollateralContract.floor();
+    uint256 nftPrice = 0; //_nftCollateralContract.floor();
     // calculate the borrow amount
     uint256 maxBorrowAmount = (nftPrice * loan.collateralRatio) / 100;
     if (_borrowAmount < maxBorrowAmount) {
