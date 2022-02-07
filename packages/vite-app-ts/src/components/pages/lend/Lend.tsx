@@ -100,7 +100,7 @@ export const Lend: FC = (props) => {
             Deposit
           </button>
         </div>
-        <div>
+        <div className="my-4 shadow-md card card-bordered">
           {myLoans?.map((loan, i) => (
             <div key={i} className="flex items-center justify-around m-1">
               <div>id: {loan.loanId.toNumber()}</div>
