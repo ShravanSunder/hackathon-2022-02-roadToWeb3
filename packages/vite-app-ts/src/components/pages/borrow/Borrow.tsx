@@ -120,7 +120,7 @@ export const Borrow: FC<IBorrowProps> = (props) => {
               <div className="flex items-center">
                 Lender: <Address address={loan.lender} ensProvider={mainnetProvider} fontSize={16} />
               </div>
-              <button className="btn btn-secondary btn-sm">Borrow</button>
+              <div className="badge badge-accent">Choose an NFT</div>
             </div>
           ))}
         </div>
@@ -140,10 +140,7 @@ export const Borrow: FC<IBorrowProps> = (props) => {
                       className="btn btn-secondary"
                       onClick={async (): Promise<void> => {
                         await tx?.(moonshotNft?.approve(deNFT?.address ?? '', nft.id));
-                        const result = await tx?.(
-                          deNFT?.borrow(0, nft.id, moonshotNft?.address ?? '', utils.parseEther('1'))
-                        );
-                        console.log(result);
+                        await tx?.(deNFT?.borrow(0, nft.id, moonshotNft?.address ?? '', loans[0].amount ?? ''));
                       }}>
                       Borrow
                     </button>
@@ -154,7 +151,7 @@ export const Borrow: FC<IBorrowProps> = (props) => {
           ))}
         </div>
 
-        <div className="grid gap-4 grid-flow-col auto-cols-4">
+        {/* <div className="grid gap-4 grid-flow-col auto-cols-4">
           {data?.result?.map((nft) => (
             <div key={nft.token_id}>
               <div className="shadow-md card card-bordered">
@@ -180,7 +177,7 @@ export const Borrow: FC<IBorrowProps> = (props) => {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
     </>
   );
