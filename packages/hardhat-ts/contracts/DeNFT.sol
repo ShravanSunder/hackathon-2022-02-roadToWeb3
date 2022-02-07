@@ -1500,7 +1500,7 @@ contract DeNFT is ERC20, IERC721Receiver {
     }
     Loan storage loan = loanIdToLoan[_loanID];
     // *** NEEDS TO BE FETCHED FROM THE ORACLE ***
-    uint256 nftPrice = 0; //_nftCollateralContract.floor();
+    uint256 nftPrice = 30 ether; //_nftCollateralContract.floor();
     // calculate the borrow amount
     uint256 maxBorrowAmount = (nftPrice * loan.collateralRatio) / 100;
     if (_borrowAmount < maxBorrowAmount) {
