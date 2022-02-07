@@ -150,7 +150,7 @@ export const Borrow: FC<IBorrowProps> = (props) => {
             </div>
           ))}
         </div>
-
+        {/* commented out for demo purposes /*}
         {/* <div className="grid gap-4 grid-flow-col auto-cols-4">
           {data?.result?.map((nft) => (
             <div key={nft.token_id}>
