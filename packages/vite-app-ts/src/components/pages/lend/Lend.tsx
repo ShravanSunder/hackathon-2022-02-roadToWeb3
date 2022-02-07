@@ -9,6 +9,11 @@ import { FC, useContext, useEffect, useState } from 'react';
 import { useAppContracts } from '~~/config/contractContext';
 import { TLoans as TLoan } from '~~/models/TLoans';
 
+const validDate = (timestamp: string): boolean => {
+  const valid = new Date(timestamp).getTime() > 0;
+  return valid;
+};
+
 export const Lend: FC = (props) => {
   const ethersContext = useEthersContext();
   const deNFT = useAppContracts('DeNFT', ethersContext.chainId);
@@ -46,7 +51,7 @@ export const Lend: FC = (props) => {
       setMyLoans(newLoans);
     };
     void getLoans();
-  }, [ethersContext.account, deNFT]);
+  }, [ethersContext.account, deNFT, numberOfLoans]);
 
   return (
     <>
@@ -110,19 +115,20 @@ export const Lend: FC = (props) => {
               <div>Duration: {loan.loanDuration} seconds</div>
               <div>Collateral Ratio: {loan.collateralRatio} %</div>
               <div>
-                Started Time: {''}
-                {loan.loanStartTime.isZero() ? new Date(loan.loanStartTime.toString()).toDateString() : 'N/A'}
+                Start Time:{' '}
+                {validDate(loan.loanStartTime.toString())
+                  ? new Date(loan.loanStartTime.toString()).toDateString()
+                  : 'N/A'}
               </div>
               <div>Amount lent: {utils.formatEther(loan.borrowedAmount as BigNumberish)}</div>
-              {!loan.loanStartTime.isZero() && (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={async (): Promise<void> => {
-                    await tx?.(deNFT?.claimDeposit(loan.loanId as BigNumberish));
-                  }}>
-                  Claim
-                </button>
-              )}
+              <button
+                disabled={!validDate(loan.loanStartTime.toString())}
+                className="btn btn-secondary btn-sm"
+                onClick={async (): Promise<void> => {
+                  await tx?.(deNFT?.claimDeposit(loan.loanId as BigNumberish));
+                }}>
+                Claim
+              </button>
             </div>
           ))}
         </div>
