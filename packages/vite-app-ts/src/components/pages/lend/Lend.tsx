@@ -7,6 +7,7 @@ import { BigNumberish, utils } from 'ethers';
 import { FC, useContext, useEffect, useState } from 'react';
 
 import { useAppContracts } from '~~/config/contractContext';
+import { TLoans as TLoan } from '~~/models/TLoans';
 
 export const Lend: FC = (props) => {
   const ethersContext = useEthersContext();
@@ -23,30 +24,33 @@ export const Lend: FC = (props) => {
   const [duration, setDuration] = useState(0);
   const [collateralRatio, setCollateralRatio] = useState(0);
 
-  const [numberOfLoans] = useContractReader(deNFT, deNFT?.totalNumLoans);
-  const [myLoans, setMyLoans] = useState<any[]>([]);
+  const [myLoans, setMyLoans] = useState<TLoan[]>([]);
   useEffect(() => {
     const getLoans = async (): Promise<void> => {
-      const myLoans: any[] = [];
-      if (!numberOfLoans) return;
-      for (let i = 0; i < numberOfLoans.toNumber(); i++) {
-        const loan = await deNFT?.loanIdToLoan(i);
-        if (!loan) continue;
+      const newLoans: TLoan[] = [];
+      if (!deNFT) return;
+      const numberOfLoans = await deNFT.totalNumLoans();
 
+      for (let i = 0; i < numberOfLoans.toNumber(); i++) {
+        const loanStatus = await deNFT.loanStatus(0);
+        if (!loanStatus) continue;
+        const loan: TLoan = await deNFT.loanIdToLoan(i);
         if (loan.lender === ethersContext.account) {
-          myLoans.push(loan);
+          newLoans.push(loan);
         }
+
+        const date = new Date(loan.loanStartTime.toString());
+
+        console.log(date, loan.loanStartTime.isZero());
       }
-      setMyLoans(myLoans);
+      setMyLoans(newLoans);
     };
-    getLoans().then(
-      () => {},
-      () => {}
-    );
-  }, [numberOfLoans, ethersContext.account]);
+    void getLoans();
+  }, [ethersContext.account, deNFT]);
 
   return (
     <>
+      <h2>Lending</h2>
       <h3>Token Balance:</h3>
       <Balance balance={balance} address={ethersContext.account} />
       <div className="container mx-auto">
@@ -103,8 +107,12 @@ export const Lend: FC = (props) => {
         <div className="my-4 shadow-md card card-bordered">
           {myLoans?.map((loan, i) => (
             <div key={i} className="flex items-center justify-around m-1">
-              <div>id: {loan.loanId.toNumber()}</div>
               <div>Duration: {loan.loanDuration} seconds</div>
+              <div>Collateral Ratio: {loan.collateralRatio} %</div>
+              <div>
+                Started Time: {''}
+                {loan.loanStartTime.isZero() ? new Date(loan.loanStartTime.toString()).toDateString() : 'N/A'}
+              </div>
               <div>Amount lent: {utils.formatEther(loan.borrowedAmount as BigNumberish)}</div>
               <button
                 className="btn btn-secondary btn-sm"

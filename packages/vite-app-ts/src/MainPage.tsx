@@ -8,7 +8,7 @@ import { useEthersContext } from 'eth-hooks/context';
 import { useDexEthPrice } from 'eth-hooks/dapps';
 import { asEthersAdaptor } from 'eth-hooks/functions';
 
-import { MainPageMenu, MainPageContracts, MainPageFooter, MainPageHeader } from './components/main';
+import { MainPageMenu, MainPageContracts, MainPageHeader } from './components/main';
 import { useScaffoldHooksExamples as useScaffoldHooksExamples } from './components/main/hooks/useScaffoldHooksExamples';
 import { Borrow, Lend, Check, MyLoans } from './components/pages';
 
@@ -115,7 +115,7 @@ export const Main: FC = () => {
       <BrowserRouter>
         <MainPageMenu route={route} setRoute={setRoute} />
         <Switch>
-          <Route exact path="/">
+          <Route exact path="/debug">
             <button
               className="btn btn-primary"
               onClick={async (): Promise<void> => {
@@ -130,7 +130,7 @@ export const Main: FC = () => {
           <Route exact path="/check">
             <Check></Check>
           </Route>
-          <Route exact path="/lend">
+          <Route exact path={['/lend', '/']}>
             <Lend></Lend>
           </Route>
           <Route exact path="/borrow">
@@ -143,7 +143,7 @@ export const Main: FC = () => {
         </Switch>
       </BrowserRouter>
 
-      <MainPageFooter scaffoldAppProviders={scaffoldAppProviders} price={ethPrice} />
+      {/* <MainPageFooter scaffoldAppProviders={scaffoldAppProviders} price={ethPrice} /> */}
     </div>
   );
 };

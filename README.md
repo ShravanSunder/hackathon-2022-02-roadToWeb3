@@ -21,7 +21,7 @@ A borrower can borrow based on floor price of their NFT Collection.
 
 if the borrower returns the loan in time, 
 - borrower gets his NFT back
-- lender gets veNFT rewards
+- lender gets ERC-20 rewards
 
 if the time passes, 
 - the lender can claim the NFT and any rewards from veNFT staking obtained

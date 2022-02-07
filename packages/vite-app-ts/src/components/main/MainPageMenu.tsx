@@ -14,15 +14,6 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
     }}
     selectedKeys={[props.route]}
     mode="horizontal">
-    <Menu.Item key="/">
-      <Link
-        onClick={(): void => {
-          props.setRoute('/');
-        }}
-        to="/">
-        Main
-      </Link>
-    </Menu.Item>
     <Menu.Item key="/lend">
       <Link
         onClick={(): void => {
@@ -48,6 +39,15 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
         }}
         to="/my-loans">
         My Loans
+      </Link>
+    </Menu.Item>
+    <Menu.Item key="/debug">
+      <Link
+        onClick={(): void => {
+          props.setRoute('/debug');
+        }}
+        to="/debug">
+        Debug: mint
       </Link>
     </Menu.Item>
     <Menu.Item key="/denft">
