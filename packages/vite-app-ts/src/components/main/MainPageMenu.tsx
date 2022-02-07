@@ -41,6 +41,15 @@ export const MainPageMenu: FC<IMainPageMenuProps> = (props) => (
         Borrow
       </Link>
     </Menu.Item>
+    <Menu.Item key="/my-loans">
+      <Link
+        onClick={(): void => {
+          props.setRoute('/my-loans');
+        }}
+        to="/my-loans">
+        My Loans
+      </Link>
+    </Menu.Item>
     <Menu.Item key="/denft">
       <Link
         onClick={(): void => {

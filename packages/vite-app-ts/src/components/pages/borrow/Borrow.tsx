@@ -43,7 +43,6 @@ export const Borrow: FC<IBorrowProps> = (props) => {
   const [numberOfLoans] = useContractReader(deNFT, deNFT?.totalNumLoans);
   // TODO: loans should be filtered to only show in the ones that don't have a borrower yet
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [myLoans, setMyLoans] = useState<any[]>([]);
   useEffect(() => {
     const getLoans = async (): Promise<void> => {
       const loans: Loan[] = [];
@@ -61,14 +60,8 @@ export const Borrow: FC<IBorrowProps> = (props) => {
           collateralRatio: collateralRatio.toNumber(),
           lender: loan.lender,
         });
-
-        if (loan.borrower === ethersContext.account) {
-          console.log('my loan', loan);
-          myLoans.push(loan);
-        }
       }
       setLoans(loans);
-      setMyLoans(myLoans);
     };
     // ugghh linter
     getLoans().then(
@@ -129,13 +122,6 @@ export const Borrow: FC<IBorrowProps> = (props) => {
               </div>
               <button className="btn btn-secondary btn-sm">Borrow</button>
             </div>
-          ))}
-        </div>
-
-        <h2>My Loans</h2>
-        <div className="my-4 shadow-md card card-bordered">
-          {myLoans?.map((loan, i) => (
-            <div key={i}>{loan.loanDuration} seconds!</div>
           ))}
         </div>
 
