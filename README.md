@@ -24,7 +24,7 @@ if the borrower returns the loan in time,
 - lender gets ERC-20 rewards
 
 if the time passes, 
-- the lender can claim the NFT and any rewards from veNFT staking obtained
+- the lender can claim the NFT and any rewards from deposit obtained
 
 
 
